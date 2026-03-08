@@ -1,0 +1,93 @@
+:root {
+  --primary-color: #00C896;
+  --primary-light: #00E5B3;
+
+  --dark-bg: #0F172A;
+  --dark-surface: #1E293B;
+  --border-color: #334155;
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  --header-height: 70px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--dark-bg);
+  color: var(--text-primary);
+}
+
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-input {
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 2px solid var(--border-color);
+  background: var(--dark-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  transition: all 0.25s ease;
+}
+
+.form-input:hover {
+  border-color: var(--primary-color);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: var(--dark-surface);
+  box-shadow: 0 5px 15px rgba(0, 200, 150, 0.12);
+}
+
+.form-link {
+  color: var(--primary-color);
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.form-link:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
