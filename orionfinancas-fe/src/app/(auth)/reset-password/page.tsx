@@ -3,19 +3,37 @@
 import { useState } from "react";
 import styles from "./ResetPassword.module.css";
 import { Button } from "@/components/ui/button/Button";
+import { api } from "@/services/api";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
+
+function ResetPasswordForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     setError("");
     setSuccess(false);
+
+    if (!token) {
+      setError("Token de recuperação ausente. Use o link do seu email.");
+      return;
+    }
 
     if (password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres.");
@@ -29,10 +47,18 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      setSuccess(true);
+    try {
+      const data = await api.post('/auth/reset-password', { token, newPassword: password });
+      if (data.status === 'OK') {
+        setSuccess(true);
+      } else {
+        setError(data.message || 'Erro ao redefinir senha');
+      }
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   }
 
   return (

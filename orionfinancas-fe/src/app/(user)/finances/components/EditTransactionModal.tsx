@@ -69,6 +69,17 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                         required
                     />
                 </div>
+                <div className={styles.formGroup} style={{ marginTop: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'normal' }}>
+                        <input
+                            type="checkbox"
+                            checked={!!editForm.isRecurring}
+                            onChange={e => setEditForm({ ...editForm, isRecurring: e.target.checked })}
+                            style={{ width: '16px', height: '16px', accentColor: '#2dd4bf' }}
+                        />
+                        Movimentação fixa/recorrente?
+                    </label>
+                </div>
                 <div className={styles.confirmActions} style={{ marginTop: '1rem' }}>
                     <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancelar</button>
                     <button type="submit" className={styles.dangerBtn} style={{ background: 'var(--primary-color)' }}>Salvar Alterações</button>

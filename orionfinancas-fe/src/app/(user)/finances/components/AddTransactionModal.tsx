@@ -20,6 +20,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         title: '',
         amount: '',
         category: '',
+        isRecurring: false,
     });
 
     // Reset form when modal opens
@@ -30,6 +31,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 title: '',
                 amount: '',
                 category: '',
+                isRecurring: false,
             });
         }
     }, [isOpen]);
@@ -39,7 +41,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         onAdd({
             ...formData,
             amount: parseFloat(formData.amount) || 0,
-            date: new Date().toLocaleDateString('pt-BR')
+            date: new Date().toLocaleDateString('pt-BR'),
+            isRecurring: formData.isRecurring
         });
     };
 
@@ -131,6 +134,18 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             onChange={e => setFormData({ ...formData, category: e.target.value })}
                         />
                     </div>
+                </div>
+
+                <div className={styles.formGroup} style={{ marginTop: '0.5rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'normal' }}>
+                        <input
+                            type="checkbox"
+                            checked={formData.isRecurring}
+                            onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
+                            style={{ width: '16px', height: '16px', accentColor: '#2dd4bf' }}
+                        />
+                        Repetir esta movimentação todos os meses (Fixo)
+                    </label>
                 </div>
 
                 <div className={styles.confirmActions} style={{ marginTop: '1rem' }}>

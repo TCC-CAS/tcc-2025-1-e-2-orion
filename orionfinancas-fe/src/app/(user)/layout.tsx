@@ -1,6 +1,5 @@
 'use client';
 
-import { Footer } from '@/components/layout/footer/Footer';
 import { Header } from '@/components/layout/header/Header';
 import styles from './UserLayout.module.css';
 import { usePathname } from 'next/navigation';
@@ -17,20 +16,17 @@ import {
     Sparkles,
     Coins
 } from 'lucide-react';
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { useUser } from '@/contexts/UserContext';
+import { useEffect, useState, useRef } from 'react';
+
 interface NavItem {
     href: string;
     label: string;
     icon: React.ReactNode;
 }
 
-interface StatItem {
-    id: string;
-    label: string;
-    value: string;
-    icon: React.ReactNode;
-}
-
-// Mock data (dados mockados)
+// Nav items
 const NAV_ITEMS: NavItem[] = [
     { href: '/finances', label: 'Finanças', icon: <Wallet size={20} /> },
     { href: '/learning', label: 'Aprender', icon: <BookOpen size={20} /> },
@@ -39,72 +35,96 @@ const NAV_ITEMS: NavItem[] = [
     { href: '/shop', label: 'Loja', icon: <ShoppingBag size={20} /> }
 ];
 
-const USER_STATS: StatItem[] = [
-    { id: 'streak', label: 'Ofensiva', value: '5 dias', icon: <Flame size={20} color="#ff4d4d" /> },
-    { id: 'lives', label: 'Vidas', value: '5/5', icon: <Heart size={20} color="#ff4d4d" /> },
-    { id: 'xp', label: 'XP', value: '1250', icon: <Sparkles size={20} color="#ffb800" /> },
-    { id: 'coins', label: 'Moedas', value: '340', icon: <Coins size={20} color="#ffb800" /> }
-];
-
 export default function UserLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const { user, stats: userStats, refreshProfile } = useUser();
+    const [animateLives, setAnimateLives] = useState(false);
+    const lastLivesRef = useRef(userStats.lives);
+
+    useEffect(() => {
+        refreshProfile();
+    }, [refreshProfile]);
+
+    useEffect(() => {
+        if (lastLivesRef.current !== userStats.lives) {
+            const lastNum = parseInt(lastLivesRef.current.split('/')[0]) || 0;
+            const currNum = parseInt(userStats.lives.split('/')[0]) || 0;
+            if (currNum < lastNum) {
+                setAnimateLives(true);
+                const timer = setTimeout(() => setAnimateLives(false), 500);
+                return () => clearTimeout(timer);
+            }
+        }
+        lastLivesRef.current = userStats.lives;
+    }, [userStats.lives]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
         window.location.href = '/';
     };
 
+    const stats = [
+        { id: 'streak', label: 'Ofensiva', value: userStats.streak, icon: <Flame size={20} color="#ff4d4d" /> },
+        { id: 'lives', label: 'Vidas', value: userStats.lives, icon: <Heart size={20} color="#ff4d4d" /> },
+        { id: 'xp', label: 'XP', value: userStats.xp, icon: <Sparkles size={20} color="#ffb800" /> },
+        { id: 'coins', label: 'Moedas', value: userStats.coins, icon: <Coins size={20} color="#ffb800" /> }
+    ];
+
     return (
-        <div className={styles.userWrapper}>
-            <Header variant="logged" />
+        <AuthGuard>
+            <div className={styles.userWrapper}>
+                <Header variant="logged" userData={user} />
 
+                <div className={styles.appLayout}>
+                    <aside className={styles.sidebarLeft}>
+                        <nav className={styles.sidebarNav}>
+                            {NAV_ITEMS.map((item) => (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`${styles.navItem} ${pathname === item.href || pathname.startsWith(item.href + '/')
+                                        ? styles.active
+                                        : ''
+                                        }`}
+                                >
+                                    {item.icon}
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </nav>
 
-            <div className={styles.appLayout}>
-                <aside className={styles.sidebarLeft}>
-                    <nav className={styles.sidebarNav}>
-                        {NAV_ITEMS.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`${styles.navItem} ${pathname === item.href || pathname.startsWith(item.href + '/')
-                                    ? styles.active
-                                    : ''
-                                    }`}
-                            >
-                                {item.icon}
-                                {item.label}
-                            </Link>
-                        ))}
-                    </nav>
+                        <Link
+                            href="/"
+                            onClick={handleLogout}
+                            className={`${styles.navItem} ${styles.logoutItem}`}
+                        >
+                            <LogOut size={20} />
+                            Sair
+                        </Link>
+                    </aside>
 
-                    <Link
-                        href="/"
-                        onClick={handleLogout}
-                        className={`${styles.navItem} ${styles.logoutItem}`}
-                    >
-                        <LogOut size={20} />
-                        Sair
-                    </Link>
-                </aside>
+                    <main className={styles.mainContent}>{children}</main>
 
-                <main className={styles.mainContent}>{children}</main>
-
-                <aside className={styles.sidebarRight}>
-                    <div className={styles.gamificationPanel}>
-                        {USER_STATS.map((stat) => (
-                            <div key={stat.id} className={styles.statItem}>
-                                <span className={styles.statIcon}>
-                                    {stat.icon}
-                                </span>
-                                <div className={styles.statInfo}>
-                                    <span className={styles.statLabel}>{stat.label}</span>
-                                    <span className={styles.statValue}>{stat.value}</span>
+                    <aside className={styles.sidebarRight}>
+                        <div className={styles.gamificationPanel}>
+                            {stats.map((stat) => (
+                                <div 
+                                    key={stat.id} 
+                                    className={`${styles.statItem} ${stat.id === 'lives' && animateLives ? styles.lifeLostAnimate : ''}`}
+                                >
+                                    <span className={styles.statIcon}>
+                                        {stat.icon}
+                                    </span>
+                                    <div className={styles.statInfo}>
+                                        <span className={styles.statLabel}>{stat.label}</span>
+                                        <span className={styles.statValue}>{stat.value}</span>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                </aside>
+                            ))}
+                        </div>
+                    </aside>
+                </div>
             </div>
-        </div>
+        </AuthGuard>
     );
 }

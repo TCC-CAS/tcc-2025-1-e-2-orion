@@ -45,7 +45,7 @@ const StatsModal: React.FC<StatsModalProps> = ({
                     <span>{accountDetails.toughestModule}</span>
                 </div>
                 <div className={styles.modalStatRow}>
-                    <span>Total de moedas ganhas:</span>
+                    <span>Moedas na carteira:</span>
                     <span><Coins size={18} /> {accountDetails.totalCoinsEarned}</span>
                 </div>
                 <div className={styles.modalStatRow}>
@@ -55,10 +55,6 @@ const StatsModal: React.FC<StatsModalProps> = ({
                 <div className={styles.modalStatRow}>
                     <span>Rank atual:</span>
                     <span className={styles.rankBadge}>{accountDetails.rank}</span>
-                </div>
-                <div className={styles.modalStatRow} style={{ borderBottom: 'none' }}>
-                    <span>Tempo total de estudo:</span>
-                    <span><Clock size={18} /> {accountDetails.totalTimeSpent}</span>
                 </div>
             </div>
         </Modal>

@@ -32,8 +32,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
                         <tr>
                             <th>Tipo</th>
                             <th>Título / Categoria</th>
-                            <th>Valor</th>
-                            <th>Data</th>
+                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: '120px' }}>Valor</th>
+                            <th style={{ textAlign: 'center' }}>Data</th>
                             <th style={{ textAlign: 'right' }}>Ações</th>
                         </tr>
                     </thead>
@@ -49,10 +49,10 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
                                     <div style={{ fontWeight: 700 }}>{tx.title}</div>
                                     <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{tx.category}</div>
                                 </td>
-                                <td style={{ fontWeight: 800, color: tx.type === 'ganho' ? '#2dd4bf' : '#ef4444' }}>
+                                <td style={{ fontWeight: 800, color: tx.type === 'ganho' ? '#2dd4bf' : '#ef4444', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                     {tx.type === 'ganho' ? '+' : '-'} R$ {tx.amount.toFixed(2).replace('.', ',')}
                                 </td>
-                                <td style={{ color: 'var(--text-secondary)' }}>{tx.date}</td>
+                                <td style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>{tx.date}</td>
                                 <td>
                                     <div className={styles.actionsCell}>
                                         <button

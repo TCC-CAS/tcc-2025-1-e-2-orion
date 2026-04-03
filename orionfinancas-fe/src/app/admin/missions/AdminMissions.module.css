@@ -1,0 +1,235 @@
+.container {
+  padding: 1rem 0;
+  color: var(--text-primary);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.addBtn {
+  background: var(--primary-color);
+  color: var(--dark-bg);
+  padding: 0.8rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(45, 212, 191, 0.2);
+}
+
+.addBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(45, 212, 191, 0.3);
+  filter: brightness(1.1);
+}
+
+.missionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.missionCard {
+  background: var(--dark-surface);
+  border: 1px solid var(--border-color);
+  padding: 1.5rem;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.missionCard:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.frequencyTag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  background: rgba(45, 212, 191, 0.1);
+  color: var(--primary-color);
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: var(--text-secondary);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.missionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.missionDesc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+  min-height: 3rem;
+}
+
+.missionStats {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.statLine {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.statLine span {
+  color: var(--text-muted);
+}
+
+.statLine strong {
+  color: var(--text-primary);
+}
+
+/* Modal Form Styles */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.formGroup input, 
+.formGroup textarea, 
+.formGroup select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.formGroup textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.formGroup input:focus, 
+.formGroup textarea:focus, 
+.formGroup select:focus {
+  border-color: var(--primary-color);
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cancelBtn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.8rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.submitBtn {
+  flex: 1;
+  background: var(--primary-color);
+  border: none;
+  color: var(--dark-bg);
+  padding: 0.8rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}

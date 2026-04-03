@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { Header } from '@/components/layout/header/Header';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -11,7 +13,8 @@ import {
   CreditCard,
   LogOut,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Award
 } from 'lucide-react';
 import styles from './AdminLayout.module.css';
 
@@ -25,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
   { href: '/admin/users', label: 'Usuários', icon: <Users size={18} /> },
   { href: '/admin/quizzes', label: 'Quizzes', icon: <FileQuestion size={18} /> },
+  { href: '/admin/missions', label: 'Missões', icon: <Award size={18} /> },
   { href: '/admin/feedbacks', label: 'Feedbacks', icon: <MessageSquareMore size={18} /> },
   { href: '/admin/subscriptions', label: 'Subscriptions', icon: <CreditCard size={18} /> }
 ];
@@ -34,15 +38,51 @@ export default function AdminLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
+
+  const isLoginPage = pathname === '/admin/login';
+
+  React.useEffect(() => {
+    if (!isLoginPage) {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        router.push('/admin/login');
+      } else {
+        setIsCheckingAuth(false);
+      }
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [isLoginPage, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/');
+    localStorage.removeItem('admin_token');
+    router.push('/admin/login');
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div style={{ 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: '#0f172a',
+        color: 'white',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        Carregando...
+      </div>
+    );
+  }
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className={styles.adminWrapper}>
-      <Header variant="logged" homeHref="/admin/dashboard" profileHref="/admin/profile" />
+      <Header variant="logged" homeHref="/admin/dashboard" profileHref="/admin/profile" hideNotifications />
 
       <div className={styles.appLayout}>
         <aside className={styles.sidebarLeft}>
@@ -64,14 +104,21 @@ export default function AdminLayout({
             })}
           </nav>
 
-          <Link
-            href="/"
+          <button
             onClick={handleLogout}
             className={`${styles.navItem} ${styles.logoutItem}`}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              width: '100%', 
+              textAlign: 'left',
+              cursor: 'pointer',
+              font: 'inherit'
+            }}
           >
             <LogOut size={18} />
             Sair
-          </Link>
+          </button>
         </aside>
 
         <main className={styles.mainContent}>{children}</main>

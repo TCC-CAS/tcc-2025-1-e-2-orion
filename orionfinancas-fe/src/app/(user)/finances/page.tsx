@@ -8,6 +8,8 @@ import HistoryModal from './components/HistoryModal';
 import WelcomeModal from './components/WelcomeModal';
 import EditTransactionModal from './components/EditTransactionModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
+import { api } from '@/services/api';
+import toast from 'react-hot-toast';
 
 const MonthlyChart = dynamic(() => import('./components/MonthlyChart'), { 
     ssr: false,
@@ -32,81 +34,96 @@ export default function FinancesPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
 
+    // Dynamic Data from Backend
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [totals, setTotals] = useState({ income: 0, expenses: 0, invested: 0, fixed: 0, balance: 0, insight: '' });
+    const [historyData, setHistoryData] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // Estados para Edição/Exclusão
+    const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+    const [deletingTxId, setDeletingTxId] = useState<number | null>(null);
+
+    const fetchDashboard = useCallback(async () => {
+        try {
+            const res = await api.get('/finances/dashboard');
+            if (res.status === 'OK' && res.data) {
+                setTransactions(res.data.transactions.map((tx: any) => ({
+                    ...tx,
+                    id: tx._id, // map _id to id
+                })));
+                setTotals({
+                    income: res.data.income || 0,
+                    expenses: res.data.expenses || 0,
+                    invested: res.data.invested || 0,
+                    fixed: res.data.fixed || 0,
+                    balance: res.data.balance || 0,
+                    insight: res.data.insight || ''
+                });
+                setHistoryData(res.data.historyData || []);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar Dashboard:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
     useEffect(() => {
+        fetchDashboard();
         const hasSeenWelcome = localStorage.getItem('seen_finances_welcome');
         if (!hasSeenWelcome) {
             setShowWelcome(true);
         }
-    }, []);
+    }, [fetchDashboard]);
 
     const closeWelcome = useCallback(() => {
         setShowWelcome(false);
         localStorage.setItem('seen_finances_welcome', 'true');
     }, []);
 
-    // Estados para Edição/Exclusão
-    const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-    const [deletingTxId, setDeletingTxId] = useState<number | null>(null);
-
-
-    // Mock inicial transformado em estado para refletir edições/exclusões
-    const [transactions, setTransactions] = useState<Transaction[]>([
-        { id: 1, type: 'gasto', title: 'Assinatura Spotify', amount: 21.90, date: '04/03/2026', category: 'Lazer' },
-        { id: 2, type: 'ganho', title: 'Freelance Design', amount: 1500.00, date: '02/03/2026', category: 'Trabalho' },
-        { id: 3, type: 'gasto', title: 'Mercado Central', amount: 156.40, date: '01/03/2026', category: 'Alimentação' },
-        { id: 4, type: 'gasto', title: 'Uber - Ida', amount: 15.00, date: '28/02/2026', category: 'Transporte' },
-        { id: 5, type: 'gasto', title: 'Aluguel', amount: 1200.00, date: '01/02/2026', category: 'Moradia' },
-        { id: 6, type: 'ganho', title: 'Bônus Mensal', amount: 500.00, date: '15/01/2026', category: 'Trabalho' },
-        { id: 7, type: 'gasto', title: 'Farmácia', amount: 45.00, date: '20/01/2026', category: 'Saúde' },
-        { id: 8, type: 'gasto', title: 'Internet Fibra', amount: 99.00, date: '05/01/2026', category: 'Serviços' },
-        { id: 9, type: 'gasto', title: 'Curso Online', amount: 199.00, date: '10/01/2026', category: 'Educação' },
-    ]);
-
-    // Cálculo dinâmico baseado no estado
-    const totals = useMemo(() => {
-        const income = transactions.filter(t => t.type === 'ganho').reduce((acc: number, t: Transaction) => acc + t.amount, 0);
-        const expenses = transactions.filter(t => t.type === 'gasto').reduce((acc: number, t: Transaction) => acc + t.amount, 0);
-        return { income, expenses, balance: income - expenses - 750 };
-    }, [transactions]);
-
-    const { income: totalIncome, expenses: totalExpensesByCtx, balance } = totals;
+    const { income: totalIncome, expenses: totalExpensesByCtx, balance, invested, fixed } = totals;
 
     const pieData = useMemo(() => [
         { name: 'Ganhos', value: totalIncome, color: '#2dd4bf' },
-        { name: 'Gastos', value: totalExpensesByCtx, color: '#ef4444' },
-        { name: 'Metas', value: 750, color: '#eab308' },
-    ], [totalIncome, totalExpensesByCtx]);
-
-    const historyData = useMemo(() => [
-        { month: 'Set', ganhos: 3200, gastos: 2100 },
-        { month: 'Out', ganhos: 3500, gastos: 1800 },
-        { month: 'Nov', ganhos: 3100, gastos: 2400 },
-        { month: 'Dez', ganhos: 4200, gastos: 2900 },
-        { month: 'Jan', ganhos: 3800, gastos: 1500 },
-        { month: 'Fev', ganhos: totalIncome, gastos: totalExpensesByCtx },
+        { name: 'Gastos totais', value: totalExpensesByCtx, color: '#ef4444' }
     ], [totalIncome, totalExpensesByCtx]);
 
     // Handlers
-    const confirmDelete = useCallback(() => {
+    const confirmDelete = useCallback(async () => {
         if (deletingTxId) {
-            setTransactions(prev => prev.filter(t => t.id !== deletingTxId));
+            try {
+                await api.delete('/finances/transaction', { id: deletingTxId });
+                toast.success('Movimentação apagada com sucesso', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' }});
+                fetchDashboard();
+            } catch (err) {
+                toast.error('Falha ao excluir', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' }});
+            }
             setDeletingTxId(null);
         }
-    }, [deletingTxId]);
+    }, [deletingTxId, fetchDashboard]);
 
-    const saveEdit = useCallback((updatedTx: any) => {
-        setTransactions(prev => prev.map(t => t.id === updatedTx.id ? updatedTx : t));
+    const saveEdit = useCallback(async (updatedTx: any) => {
+        try {
+            await api.put('/finances/transaction', updatedTx);
+            toast.success('Movimentação atualizada', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' }});
+            fetchDashboard();
+        } catch (err) {
+            toast.error('Falha ao atualizar', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' }});
+        }
         setEditingTx(null);
-    }, []);
+    }, [fetchDashboard]);
 
-    const handleAddTx = useCallback((payload: any) => {
-        const fullPayload = {
-            id: Date.now(),
-            ...payload
-        };
-        setTransactions(prev => [fullPayload, ...prev]);
+    const handleAddTx = useCallback(async (payload: any) => {
+        try {
+            await api.post('/finances/transaction', payload);
+            toast.success('Movimentação registrada!', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' }});
+            fetchDashboard();
+        } catch (err) {
+            toast.error('Erro ao lançar movimentação', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' }});
+        }
         setIsAddModalOpen(false);
-    }, []);
+    }, [fetchDashboard]);
 
     return (
         <div className={styles.financesContainer}>
@@ -158,35 +175,47 @@ export default function FinancesPage() {
 
                                         <div className={styles.balanceHighlight}>
                                             <span className={styles.balanceLabel}>Saldo p/ gastar</span>
-                                            <span
-                                                className={styles.balanceValueHighlight}
-                                                style={{ color: balance < 0 ? '#ef4444' : '#2dd4bf' }}
-                                            >
-                                                R$ {balance.toFixed(2).replace('.', ',')}
-                                            </span>
+                                            {isLoading ? (
+                                                <div style={{ height: '36px', width: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
+                                            ) : (
+                                                <span
+                                                    className={styles.balanceValueHighlight}
+                                                    style={{ color: balance < 0 ? '#ef4444' : '#2dd4bf' }}
+                                                >
+                                                    R$ {balance.toFixed(2).replace('.', ',')}
+                                                </span>
+                                            )}
                                             <p className={styles.balanceHint}>Livre após reservas e fixos.</p>
                                         </div>
 
                                         <div className={styles.dataBreakdown}>
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Entradas</span>
-                                                <span className={styles.breakdownValue} style={{ color: '#2dd4bf' }}>
-                                                    R$ {totalIncome.toFixed(2).replace('.', ',')}
-                                                </span>
+                                                {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
+                                                    <span className={styles.breakdownValue} style={{ color: '#2dd4bf' }}>
+                                                        R$ {totalIncome.toFixed(2).replace('.', ',')}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Saídas</span>
-                                                <span className={styles.breakdownValue} style={{ color: '#ef4444' }}>
-                                                    R$ {totalExpensesByCtx.toFixed(2).replace('.', ',')}
-                                                </span>
+                                                {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
+                                                    <span className={styles.breakdownValue} style={{ color: '#ef4444' }}>
+                                                        R$ {totalExpensesByCtx.toFixed(2).replace('.', ',')}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Investido</span>
-                                                <span className={styles.breakdownValue}>R$ 750,00</span>
+                                                {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
+                                                    <span className={styles.breakdownValue}>R$ {invested.toFixed(2).replace('.', ',')}</span>
+                                                )}
                                             </div>
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Total Fixos</span>
-                                                <span className={styles.breakdownValue}>R$ 1.200,00</span>
+                                                {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
+                                                    <span className={styles.breakdownValue}>R$ {fixed.toFixed(2).replace('.', ',')}</span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -210,7 +239,7 @@ export default function FinancesPage() {
                                         </svg>
                                     </div>
                                     <div className={styles.eduInfo}>
-                                        <p>Insight: Foque em sua <strong>Reserva de Emergência</strong> (meta: 3 meses).</p>
+                                        <p dangerouslySetInnerHTML={{ __html: totals.insight ? `Insight: ${totals.insight}` : "Insight: Mantenha seu planejamento financeiro em dia!" }}></p>
                                     </div>
                                 </div>
                                 <div className={styles.healthBadge} style={{ background: 'transparent', border: 'none' }}>
@@ -235,30 +264,49 @@ export default function FinancesPage() {
                 </div>
 
                 <div className={styles.activityList}>
-                    {transactions.slice(0, 4).map((tx: Transaction) => (
-                        <div key={tx.id} className={styles.activityItem}>
-                            <div className={styles.activityIcon} style={{ background: tx.type === 'ganho' ? 'rgba(45, 212, 191, 0.1)' : 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {tx.type === 'ganho' ? (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
-                                        <polyline points="17 6 23 6 23 12"></polyline>
-                                    </svg>
-                                ) : (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
-                                        <polyline points="17 18 23 18 23 12"></polyline>
-                                    </svg>
-                                )}
+                    {isLoading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className={styles.activityItem} style={{ animation: 'pulse 1.5s infinite' }}>
+                                <div className={styles.activityIcon} style={{ background: 'rgba(255,255,255,0.05)' }}></div>
+                                <div className={styles.activityMain}>
+                                    <div style={{ height: '16px', width: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '6px' }}></div>
+                                    <div style={{ height: '12px', width: '180px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                                </div>
+                                <div className={styles.activityAmount}>
+                                    <div style={{ height: '24px', width: '80px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}></div>
+                                </div>
                             </div>
-                            <div className={styles.activityMain}>
-                                <span className={styles.activityTitle}>{tx.title}</span>
-                                <span className={styles.activityCategory}>{tx.category} • {tx.date}</span>
-                            </div>
-                            <div className={`${styles.activityAmount} ${tx.type === 'ganho' ? styles.amountGanho : styles.amountGasto}`}>
-                                {tx.type === 'ganho' ? '+' : '-'} R$ {tx.amount.toFixed(2).replace('.', ',')}
-                            </div>
+                        ))
+                    ) : transactions.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
+                            Nenhuma transação registrada.
                         </div>
-                    ))}
+                    ) : (
+                        transactions.slice(0, 4).map((tx: Transaction) => (
+                            <div key={tx.id} className={styles.activityItem}>
+                                <div className={styles.activityIcon} style={{ background: tx.type === 'ganho' ? 'rgba(45, 212, 191, 0.1)' : 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {tx.type === 'ganho' ? (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                            <polyline points="17 6 23 6 23 12"></polyline>
+                                        </svg>
+                                    ) : (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                                            <polyline points="17 18 23 18 23 12"></polyline>
+                                        </svg>
+                                    )}
+                                </div>
+                                <div className={styles.activityMain}>
+                                    <span className={styles.activityTitle}>{tx.title}</span>
+                                    <span className={styles.activityCategory}>{tx.category} • {tx.date}</span>
+                                </div>
+                                <div className={`${styles.activityAmount} ${tx.type === 'ganho' ? styles.amountGanho : styles.amountGasto}`}>
+                                    {tx.type === 'ganho' ? '+' : '-'} R$ {tx.amount.toFixed(2).replace('.', ',')}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 

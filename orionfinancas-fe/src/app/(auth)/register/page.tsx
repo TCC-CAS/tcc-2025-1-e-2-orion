@@ -6,8 +6,46 @@ import styles from './Register.module.css';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button/Button';
 import { Checkbox } from '@/components/ui/checkbox/Checkbox';
+import { useState } from 'react';
+import { api } from '@/services/api';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    birthdate: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const data = await api.post('/auth/register', formData);
+      
+      if (data.status === 'OK') {
+        router.push('/login?registered=true');
+      } else {
+        setError(data.message || 'Erro ao realizar cadastro');
+      }
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className={styles.page}>
       <div className={styles.card}>
@@ -18,25 +56,54 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form className={styles.form}>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</p>}
+          
           <div className={styles.field}>
             <label>Nome completo</label>
-            <input type="text" placeholder="Seu nome" required />
+            <input 
+              type="text" 
+              name="name"
+              placeholder="Seu nome" 
+              value={formData.name}
+              onChange={handleChange}
+              required 
+            />
           </div>
 
           <div className={styles.field}>
             <label>Email</label>
-            <input type="email" placeholder="seu@email.com" required />
+            <input 
+              type="email" 
+              name="email"
+              placeholder="seu@email.com" 
+              value={formData.email}
+              onChange={handleChange}
+              required 
+            />
           </div>
 
           <div className={styles.field}>
             <label>Senha</label>
-            <input type="password" placeholder="••••••••" required />
+            <input 
+              type="password" 
+              name="password"
+              placeholder="••••••••" 
+              value={formData.password}
+              onChange={handleChange}
+              required 
+            />
           </div>
 
           <div className={styles.field}>
             <label>Data de nascimento</label>
-            <input type="date" required />
+            <input 
+              type="date" 
+              name="birthdate"
+              value={formData.birthdate}
+              onChange={handleChange}
+              required 
+            />
           </div>
 
           <Checkbox
@@ -61,8 +128,8 @@ export default function RegisterPage() {
             }
           />
 
-          <Button type="submit" variant="primary">
-            Registrar-se
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? 'Registrando...' : 'Registrar-se'}
           </Button>
         </form>
 
@@ -72,6 +139,7 @@ export default function RegisterPage() {
 
         <Button
           variant="secondary"
+          type="button"
           onClick={() => signIn('google', { callbackUrl: '/learning' })}
         >
           <Image

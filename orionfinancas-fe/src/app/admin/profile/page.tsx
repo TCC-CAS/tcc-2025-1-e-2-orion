@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { User, Shield, Key } from 'lucide-react';
 import styles from './AdminProfile.module.css';
 import Modal from '@/components/ui/Modal';
+import toast from 'react-hot-toast';
 
 const ADMIN_DATA = {
   name: 'Administrador Órion',
@@ -79,7 +80,7 @@ export default function AdminProfilePage() {
       >
         <form className={styles.modalForm} onSubmit={(e) => {
           e.preventDefault();
-          alert('Senha redefinida com sucesso (simulação)');
+          toast.success('Senha redefinida com sucesso (simulação)', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' } });
           setIsResetModalOpen(false);
         }}>
           <div className={styles.inputGroup}>

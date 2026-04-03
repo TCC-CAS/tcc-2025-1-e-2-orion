@@ -3,14 +3,15 @@
 import React from 'react';
 import Modal from '@/components/ui/Modal';
 import Link from 'next/link';
+import { User } from 'lucide-react';
 import styles from '../Profile.module.css';
 
 interface AvatarModalProps {
     isOpen: boolean;
     onClose: () => void;
     ownedAvatars: any[];
-    currentAvatarImg: string;
-    onSelect: (img: string) => void;
+    currentAvatarImg: string | null;
+    onSelect: (img: string | null) => void;
 }
 
 const AvatarModal: React.FC<AvatarModalProps> = ({
@@ -37,7 +38,33 @@ const AvatarModal: React.FC<AvatarModalProps> = ({
                         onClick={() => onSelect(avatar.img)}
                     >
                         <div className={styles.optionCircle}>
-                            <img src={avatar.img} alt={avatar.label} className={styles.optionImg} />
+                            {avatar.img ? (
+                                <img 
+                                    src={avatar.img} 
+                                    alt={avatar.label} 
+                                    className={styles.optionImg} 
+                                    style={{ color: 'transparent' }}
+                                    onError={(e) => { 
+                                        e.currentTarget.style.display = 'none';
+                                        (e.currentTarget.parentElement?.querySelector('.fallback-icon-modal') as HTMLElement).style.display = 'flex';
+                                    }}
+                                />
+                            ) : null}
+                            <div 
+                                className="fallback-icon-modal" 
+                                style={{ 
+                                    display: avatar.img ? 'none' : 'flex',
+                                    width: '100%',
+                                    height: '100%',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '50%',
+                                    color: 'rgba(255,255,255,0.4)'
+                                }}
+                            >
+                                <User size={24} />
+                            </div>
                         </div>
                         <span>{avatar.label}</span>
                     </div>

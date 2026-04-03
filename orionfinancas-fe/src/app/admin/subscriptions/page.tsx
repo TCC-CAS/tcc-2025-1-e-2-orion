@@ -1,9 +1,14 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './Subscriptions.module.css';
+import { api } from '@/services/api';
 
 type SubscriptionStatus = 'ativa' | 'renovada' | 'cancelada' | 'pendente';
+type SubscriptionFilter = 'todos' | SubscriptionStatus;
 
 interface SubscriptionItem {
-  id: number;
+  id: string;
   userName: string;
   plan: string;
   status: SubscriptionStatus;
@@ -11,20 +16,59 @@ interface SubscriptionItem {
   nextBilling: string;
 }
 
-const subscriptions: SubscriptionItem[] = [
-  { id: 1, userName: 'Lucas Martins', plan: 'Premium Mensal', status: 'ativa', startedAt: '02/01/2026', nextBilling: '02/04/2026' },
-  { id: 2, userName: 'Marina Souza', plan: 'Premium Anual', status: 'renovada', startedAt: '20/03/2025', nextBilling: '20/03/2027' },
-  { id: 3, userName: 'Rafael Mendes', plan: 'Premium Mensal', status: 'cancelada', startedAt: '12/09/2025', nextBilling: '-' },
-  { id: 4, userName: 'Ana Carolina', plan: 'Premium Mensal', status: 'pendente', startedAt: '05/03/2026', nextBilling: '05/04/2026' }
-];
-
 export default function AdminSubscriptionsPage() {
-  const stats = {
+  const [filter, setFilter] = useState<SubscriptionFilter>('todos');
+  const [subscriptions, setSubscriptions] = useState<SubscriptionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await api.get('/subscriptions/admin');
+      if (response.status !== 'OK') {
+        throw new Error(response.message || 'Falha ao carregar assinaturas.');
+      }
+
+      const responseData = Array.isArray(response.data) ? response.data : [];
+      setSubscriptions(responseData);
+    } catch (requestError) {
+      const message = requestError instanceof Error
+        ? requestError.message
+        : 'Erro ao carregar assinaturas.';
+
+      setError(message);
+      setSubscriptions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [fetchSubscriptions]);
+
+  const filteredSubscriptions = useMemo(() => {
+    if (filter === 'todos') return subscriptions;
+    return subscriptions.filter((item) => item.status === filter);
+  }, [filter, subscriptions]);
+
+  const stats = useMemo(() => ({
     active: subscriptions.filter((item) => item.status === 'ativa').length,
     renewed: subscriptions.filter((item) => item.status === 'renovada').length,
     canceled: subscriptions.filter((item) => item.status === 'cancelada').length,
     pending: subscriptions.filter((item) => item.status === 'pendente').length
-  };
+  }), [subscriptions]);
+
+  const filterButtons: { label: string; value: SubscriptionFilter }[] = [
+    { label: 'Todos', value: 'todos' },
+    { label: 'Ativa', value: 'ativa' },
+    { label: 'Renovada', value: 'renovada' },
+    { label: 'Cancelada', value: 'cancelada' },
+    { label: 'Pendente', value: 'pendente' }
+  ];
 
   return (
     <section className={styles.container}>
@@ -54,6 +98,19 @@ export default function AdminSubscriptionsPage() {
         </article>
       </div>
 
+      <div className={styles.filters}>
+        {filterButtons.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            onClick={() => setFilter(item.value)}
+            className={`${styles.filterBtn} ${filter === item.value ? styles.filterActive : ''}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <div className={styles.panel}>
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
@@ -67,7 +124,35 @@ export default function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody>
-              {subscriptions.map((item) => (
+              {loading && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center' }}>
+                    Carregando assinaturas...
+                  </td>
+                </tr>
+              )}
+              {!loading && error && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center' }}>
+                    <p style={{ marginBottom: '0.75rem' }}>{error}</p>
+                    <button
+                      type="button"
+                      onClick={fetchSubscriptions}
+                      className={`${styles.filterBtn} ${styles.filterActive}`}
+                    >
+                      Tentar novamente
+                    </button>
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && filteredSubscriptions.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center' }}>
+                    Nenhuma assinatura encontrada.
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && filteredSubscriptions.map((item) => (
                 <tr key={item.id}>
                   <td>{item.userName}</td>
                   <td>{item.plan}</td>

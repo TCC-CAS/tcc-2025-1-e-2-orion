@@ -4,6 +4,9 @@ import { useState, useCallback } from 'react';
 import { FormField } from '@/components/ui/form/FormField';
 import Modal from '@/components/ui/Modal';
 import styles from './SubscriptionModal.module.css';
+import toast from 'react-hot-toast';
+import { api } from '@/services/api';
+import { useUser } from '@/contexts/UserContext';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -13,6 +16,7 @@ interface SubscriptionModalProps {
 type Step = 'plan' | 'payment' | 'card' | 'pix';
 
 export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
+  const { refreshProfile } = useUser();
   const [step, setStep] = useState<Step>('plan');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual' | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | null>(null);
@@ -30,6 +34,22 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
     email: '',
   });
 
+  const handleBypassPremium = async () => {
+    try {
+        const res = await api.post('/account/set-premium', {});
+        if (res.status === 'OK') {
+            toast.success('Modo Premium ativado via Bypass!', { 
+                icon: '🔑',
+                style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #eab308' } 
+            });
+            await refreshProfile();
+            onClose();
+        }
+    } catch (err) {
+        toast.error('Erro ao ativar Premium');
+    }
+  };
+
   const handleNextFromPlan = useCallback(() => {
     if (selectedPlan) setStep('payment');
   }, [selectedPlan]);
@@ -40,9 +60,8 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
   }, [paymentMethod]);
 
   const handleSubscribe = useCallback(() => {
-    // Aqui viria a lógica de backend
     console.log({ selectedPlan, paymentMethod, cardData, pixData });
-    alert('Assinatura realizada com sucesso! (simulado)');
+    toast.success('Assinatura realizada com sucesso! (simulado)', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' } });
     onClose();
     setTimeout(() => {
         setStep('plan');
@@ -89,13 +108,32 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
                     <span className={styles.planPrice}>R$ 299,00/ano</span>
                 </button>
                 </div>
-                <button
-                className={styles.primaryBtn}
-                onClick={handleNextFromPlan}
-                disabled={!selectedPlan}
-                >
-                Próximos passos
-                </button>
+                
+                <div className={styles.footerActions} style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+                    <button
+                        className={styles.primaryBtn}
+                        onClick={handleNextFromPlan}
+                        disabled={!selectedPlan}
+                    >
+                        Próximos passos
+                    </button>
+                    
+                    <button 
+                        type="button" 
+                        onClick={handleBypassPremium} 
+                        style={{ 
+                            background: 'rgba(234, 179, 8, 0.1)', 
+                            color: '#eab308', 
+                            border: '1px dashed #eab308', 
+                            padding: '10px', 
+                            borderRadius: '8px', 
+                            fontSize: '0.8rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        ✨ Ativar Premium (Bypass Teste) ✨
+                    </button>
+                </div>
             </>
             )}
 

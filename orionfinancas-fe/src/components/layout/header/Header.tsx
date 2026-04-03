@@ -3,38 +3,47 @@
 import Link from 'next/link';
 import { Bell, User } from 'lucide-react';
 import styles from './Header.module.css';
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from "react";
+import { api } from '@/services/api';
 
 interface HeaderProps {
   variant?: 'public' | 'logged';
   homeHref?: string;
   profileHref?: string;
+  hideNotifications?: boolean;
+  userData?: {
+    name?: string;
+    avatarUrl?: string | null;
+  } | null;
 }
 
-export function Header({ variant = 'public', homeHref, profileHref }: HeaderProps) {
+export function Header({ variant = 'public', homeHref, profileHref, hideNotifications, userData }: HeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
 
-  const notifications = [
-    {
-      id: 1,
-      title: 'Resumo diário disponível',
-      description: 'Seu resumo financeiro de hoje já está pronto.',
-      time: 'Há 5 minutos',
-    },
-    {
-      id: 2,
-      title: 'Meta de economia alcançada',
-      description: 'Você bateu a meta de economia deste mês. Parabéns!',
-      time: 'Há 2 horas',
-    },
-    {
-      id: 3,
-      title: 'Nova dica financeira',
-      description: 'Confira a nova dica para otimizar seus gastos fixos.',
-      time: 'Ontem',
-    },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (variant === 'logged' && !hideNotifications) {
+      api.get('/account/notifications')
+        .then(res => {
+          if (res.status === 'OK') setNotifications(res.data || []);
+        })
+        .catch(err => console.error('Erro ao buscar notificações:', err));
+    }
+  }, [variant, hideNotifications]);
+
+  const formatDistance = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return `Há ${diffInSeconds} segundos`;
+    if (diffInSeconds < 3600) return `Há ${Math.floor(diffInSeconds / 60)} minutos`;
+    if (diffInSeconds < 86400) return `Há ${Math.floor(diffInSeconds / 3600)} horas`;
+    return `Há ${Math.floor(diffInSeconds / 86400)} dias`;
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -74,57 +83,66 @@ export function Header({ variant = 'public', homeHref, profileHref }: HeaderProp
             </nav>
           ) : (
             <div className={styles.actions}>
-              <div className={styles.dropdownWrapper} ref={notificationsRef}>
-                <button
-                  className={styles.iconBtn}
-                  onClick={() => setIsNotificationsOpen((prev) => !prev)}
-                >
-                  <Bell size={20} color="var(--text-primary)" />
-                </button>
+              {!hideNotifications && (
+                <div className={styles.dropdownWrapper} ref={notificationsRef}>
+                  <button
+                    className={styles.iconBtn}
+                    onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                  >
+                    <Bell size={20} color="var(--text-primary)" />
+                  </button>
 
-                {isNotificationsOpen && (
-                  <div className={styles.dropdown}>
-                    <div className={styles.dropdownTitle}>Notificações</div>
+                  {isNotificationsOpen && (
+                    <div className={styles.dropdown}>
+                      <div className={styles.dropdownTitle}>Notificações</div>
 
-                    {notifications.length === 0 ? (
-                      <div className={styles.emptyState}>
-                        Nenhuma notificação no momento.
-                      </div>
-                    ) : (
-                      <ul className={styles.notificationList}>
-                        {notifications.map((notification) => (
-                          <li
-                            key={notification.id}
-                            className={styles.notificationItem}
-                          >
-                            <div className={styles.notificationTitle}>
-                              {notification.title}
-                            </div>
-                            <div className={styles.notificationDescription}>
-                              {notification.description}
-                            </div>
-                            <span className={styles.notificationTime}>
-                              {notification.time}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
+                      {notifications.length === 0 ? (
+                        <div className={styles.emptyState}>
+                          Nenhuma notificação no momento.
+                        </div>
+                      ) : (
+                        <ul className={styles.notificationList}>
+                          {notifications.map((notification) => (
+                            <li
+                              key={notification.id || notification._id}
+                              className={styles.notificationItem}
+                            >
+                              <div className={styles.notificationTitle}>
+                                {notification.title}
+                              </div>
+                              <div className={styles.notificationDescription}>
+                                {notification.description}
+                              </div>
+                              <span className={styles.notificationTime}>
+                                {notification.time || formatDistance(notification.createdAt)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <Link href={profileHref ?? "/profile"} className={styles.avatar}>
-                <img
-                  src="/images/avatar.png?v=2"
-                  alt="Perfil"
-                  className={styles.avatarImg}
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.setAttribute('style', 'display: block');
-                  }}
+                {userData?.avatarUrl ? (
+                  <img
+                    src={userData.avatarUrl}
+                    alt={userData?.name || "Perfil"}
+                    className={styles.avatarImg}
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const svg = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (svg) svg.style.display = 'block';
+                    }}
+                  />
+                ) : null}
+                <User 
+                  size={24} 
+                  style={{ display: userData?.avatarUrl ? 'none' : 'block' }} 
+                  color="var(--text-secondary)"
                 />
-                <User size={24} style={{ display: 'none' }} />
               </Link>
             </div>
           )}

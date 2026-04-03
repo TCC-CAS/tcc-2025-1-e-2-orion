@@ -3,6 +3,7 @@
 import { useState } from "react";
 import styles from "./ForgotPassword.module.css";
 import { Button } from "@/components/ui/button/Button";
+import { api } from "@/services/api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -10,24 +11,24 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-
     setLoading(true);
     setError("");
     setSuccess(false);
 
-   
-    setTimeout(() => {
-      if (!email.includes("@")) {
-        setError("Informe um email válido.");
-        setLoading(false);
-        return;
+    try {
+      const data = await api.post('/auth/forgot-password', { email });
+      if (data.status === 'OK') {
+        setSuccess(true);
+      } else {
+        setError(data.message || 'Erro ao processar solicitação');
       }
-
-      setSuccess(true);
+    } catch (err) {
+      setError('Erro de conexão com o servidor');
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   }
 
   return (

@@ -1,25 +1,80 @@
 
 "use client";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import styles from '../UserLists.module.css';
 import GoalModal from './components/GoalModal';
 import DeleteGoalModal from './components/DeleteGoalModal';
+import { api } from '@/services/api';
 
 export default function GoalsPage() {
-    const [goals, setGoals] = useState([
-        { id: 1, title: "Comprar livro", current: 13.00, target: 50.00, urgency: 'medium', description: 'Para estudar investimentos.', date: '2026-05-20' },
-        { id: 2, title: "Guardar 500 reais", current: 450.00, target: 500.00, urgency: 'high', description: 'Meta de economia mensal.', date: '2026-04-10' },
-        { id: 3, title: "Economizar dinheiro do almoço", current: 13.00, target: 75.00, urgency: 'low', description: 'Reduzir gastos diários.', date: '' },
-    ]);
+    const [goals, setGoals] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const [currentBalance, setCurrentBalance] = useState(1500.00);
+    const [currentBalance, setCurrentBalance] = useState(0);
+
+    const fetchProfileData = useCallback(async () => {
+        try {
+            const res = await api.get('/account/profile');
+            if (res.status === 'OK' && res.data) {
+                setCurrentBalance(res.data.wallet?.balance || 0);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar saldo:', err);
+        }
+    }, []);
 
     const [initialData, setInitialData] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [goalToDelete, setGoalToDelete] = useState<any>(null);
+
+    const urgencyToColor = (urgency: string) => {
+        switch (urgency) {
+            case 'low': return '#22c55e';
+            case 'medium': return '#eab308';
+            case 'high': return '#ef4444';
+            default: return '#eab308';
+        }
+    };
+
+    const colorToUrgency = (color: string) => {
+        const c = color?.toLowerCase();
+        if (c === '#22c55e') return 'low';
+        if (c === '#ef4444') return 'high';
+        return 'medium';
+    };
+
+    const fetchGoals = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await api.get('/goals/get-goals');
+            if (data.status === 'OK') {
+                const mapped = data.allGoals.map((g: any) => ({
+                    id: g._id,
+                    title: g.goalName,
+                    current: g.currentAmount || 0,
+                    target: g.targetAmount,
+                    urgency: colorToUrgency(g.urgencyColor),
+                    description: g.description || '',
+                    date: g.targetDate ? new Date(g.targetDate).toISOString().split('T')[0] : ''
+                }));
+                setGoals(mapped);
+            } else {
+                setGoals([]);
+            }
+        } catch (err) {
+            console.error('Erro ao carregar metas:', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchGoals();
+        fetchProfileData();
+    }, [fetchGoals, fetchProfileData]);
 
     const openCreateModal = useCallback(() => {
         setIsEditing(false);
@@ -42,55 +97,65 @@ export default function GoalsPage() {
         setIsModalOpen(true);
     }, []);
 
-    const handleSaveGoal = useCallback((data: any) => {
+    const handleSaveGoal = useCallback(async (data: any) => {
         const targetVal = parseFloat(data.target) || 0;
         const currentVal = parseFloat(data.current) || 0;
 
-        if (isEditing && editingId !== null) {
-            const oldGoal = goals.find(g => g.id === editingId);
-            if (oldGoal) {
-                const diff = currentVal - oldGoal.current;
-                setCurrentBalance(prev => prev - diff);
-
-                setGoals(prev => prev.map(g => g.id === editingId ? {
-                    ...g,
-                    title: data.title,
-                    current: currentVal,
-                    target: targetVal,
-                    date: data.date,
-                    description: data.description,
-                    urgency: data.urgency,
-                } : g));
+        try {
+            if (isEditing && editingId) {
+                const payload = {
+                    _id: editingId,
+                    goalName: data.title,
+                    targetAmount: targetVal,
+                    currentAmount: currentVal,
+                    targetDate: data.date,
+                    urgencyColor: urgencyToColor(data.urgency),
+                    description: data.description
+                };
+                const res = await api.put('/goals/update-goal', payload);
+                if (res.status === 'OK') {
+                    fetchGoals();
+                }
+            } else {
+                const payload = {
+                    goalName: data.title,
+                    targetAmount: targetVal,
+                    currentAmount: currentVal,
+                    targetDate: data.date,
+                    urgencyColor: urgencyToColor(data.urgency),
+                    description: data.description
+                };
+                const res = await api.post('/goals/create-goal', payload);
+                if (res.status === 'OK') {
+                    fetchGoals();
+                }
             }
-        } else {
-            setCurrentBalance(prev => prev - currentVal);
-            const newGoalItem = {
-                id: Date.now(),
-                title: data.title,
-                current: currentVal,
-                target: targetVal,
-                date: data.date,
-                description: data.description,
-                urgency: data.urgency,
-            };
-            setGoals(prev => [...prev, newGoalItem]);
+        } catch (err) {
+            console.error('Erro ao salvar meta:', err);
+            alert('Erro ao conectar com o servidor');
         }
         setIsModalOpen(false);
-    }, [isEditing, editingId, goals]);
+    }, [isEditing, editingId, fetchGoals]);
 
     const openDeleteModal = useCallback((goal: any) => {
         setGoalToDelete(goal);
         setIsDeleteModalOpen(true);
     }, []);
 
-    const confirmDeleteGoal = useCallback(() => {
+    const confirmDeleteGoal = useCallback(async () => {
         if (goalToDelete) {
-            setCurrentBalance(prev => prev + goalToDelete.current);
-            setGoals(prev => prev.filter(g => g.id !== goalToDelete.id));
+            try {
+                const res = await api.delete('/goals/delete-goal', { _id: goalToDelete.id });
+                if (res.status === 'OK') {
+                    fetchGoals();
+                }
+            } catch (err) {
+                console.error('Erro ao deletar meta:', err);
+            }
             setIsDeleteModalOpen(false);
             setGoalToDelete(null);
         }
-    }, [goalToDelete]);
+    }, [goalToDelete, fetchGoals]);
 
     return (
         <div className={styles.pageContainer}>
@@ -105,7 +170,29 @@ export default function GoalsPage() {
 
             <div className={styles.listContainer}>
                 <div className={styles.scrollableList}>
-                    {goals.map((goal) => (
+                    {loading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <div key={`skel-${i}`} className={styles.card} style={{ animation: 'pulse 1.5s infinite' }}>
+                                <div className={styles.cardInfo} style={{ flex: 1, paddingRight: '0.5rem' }}>
+                                    <div style={{ height: '24px', width: '150px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', marginBottom: '1rem' }} />
+                                    <div className={styles.cardProgress} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: '0.6rem' }}>
+                                        <div style={{ height: '36px', width: '100px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+                                        <div style={{ height: '36px', width: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }} />
+                                    </div>
+                                    <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', marginTop: '1rem' }} />
+                                </div>
+                                <div className={styles.cardActions} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', justifyContent: 'center' }}>
+                                    <div style={{ height: '36px', width: '36px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', alignSelf: 'flex-end' }} />
+                                    <div style={{ height: '36px', width: '100px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }} />
+                                </div>
+                            </div>
+                        ))
+                    ) : goals.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', width: '100%' }}>
+                            Nenhuma meta registrada. Que tal criar uma agora?
+                        </div>
+                    ) : (
+                        goals.map((goal) => (
                         <div key={goal.id} className={styles.card}>
                             <div className={styles.cardInfo} style={{ flex: 1, paddingRight: '0.5rem' }}>
                                 <div className={styles.cardTitle}>{goal.title}</div>
@@ -155,7 +242,7 @@ export default function GoalsPage() {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    )))}
                 </div>
 
                 <button className={styles.addBtn} onClick={openCreateModal}>
