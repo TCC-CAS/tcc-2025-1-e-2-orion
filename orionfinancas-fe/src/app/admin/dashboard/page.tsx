@@ -1,21 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import styles from './AdminDashboard.module.css';
+import { api } from '@/services/api';
+import toast from 'react-hot-toast';
 
 // Componentes extraídos com carregamento dinâmico para performance
 const AdminPieChart = dynamic(() => import('./components/AdminPieChart'), { 
     ssr: false,
-    loading: () => <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 24 }}>Carregando gráfico de base...</div>
+    loading: () => <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 24 }}>Carregando gráfico...</div>
 });
 const AdminLineChart = dynamic(() => import('./components/AdminLineChart'), { 
     ssr: false,
-    loading: () => <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 24 }}>Carregando histórico de usuários...</div>
+    loading: () => <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 24 }}>Carregando histórico...</div>
 });
 const AdminHistoryModal = dynamic(() => import('./components/AdminHistoryModal'), { ssr: false });
 
-type DashboardView = 'resumo' | 'historico';
+type DashboardView = 'resumo' | 'historico' | 'config';
 
 const historyData = [
   { month: 'Set', activeUsers: 860, newSignups: 74, reactivated: 18 },
@@ -32,49 +34,54 @@ const statusDistribution = [
   { name: 'Inativos', value: 214, color: '#ef4444' }
 ];
 
-const recentAdminEvents = [
-  {
-    id: 1,
-    title: 'Lote de validação concluído',
-    details: '32 perfis revisados no onboarding',
-    date: 'Hoje, 09:12',
-    type: 'success'
-  },
-  {
-    id: 2,
-    title: 'Aumento de novos cadastros',
-    details: 'Pico de +18% nas últimas 24h',
-    date: 'Hoje, 07:40',
-    type: 'info'
-  },
-  {
-    id: 3,
-    title: 'Alerta de tickets pendentes',
-    details: '2 solicitações críticas aguardando resposta',
-    date: 'Ontem, 20:33',
-    type: 'warning'
-  },
-  {
-    id: 4,
-    title: 'Reativação de usuários',
-    details: '30 contas voltaram a interagir este mês',
-    date: 'Ontem, 14:10',
-    type: 'success'
-  }
-];
-
 export default function AdminDashboardPage() {
   const [view, setView] = useState<DashboardView>('resumo');
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [stats, setStats] = useState({ totalUsers: 0, activeUsers: 0, totalQuizzes: 0, totalSubscriptions: 0 });
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeUsers = historyData[historyData.length - 1].activeUsers;
-  const newSignups = historyData[historyData.length - 1].newSignups;
-  const reactivated = historyData[historyData.length - 1].reactivated;
+  // RN15 Settings
+  const [settings, setSettings] = useState({ xpPerQuestion: 10, coinsPerQuestion: 5, minPassingScore: 70 });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  const engagementRate = useMemo(() => {
-    const totalBase = 1594;
-    return Math.round((activeUsers / totalBase) * 100);
-  }, [activeUsers]);
+  useEffect(() => {
+    Promise.all([
+      api.get('/account/admin/stats'),
+      api.get('/account/admin/activity'),
+      api.get('/account/admin/settings')
+    ]).then(([statsRes, activityRes, settingsRes]) => {
+      if (statsRes.status === 'OK') setStats(statsRes.data);
+      if (activityRes.status === 'OK') setActivities(activityRes.data);
+      if (settingsRes.status === 'OK') setSettings(settingsRes.data);
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));
+  }, []);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSettings(true);
+    try {
+      const res = await api.put('/account/admin/settings', settings);
+      if (res.status === 'OK') {
+        toast.success('Configurações atualizadas!');
+      }
+    } catch (err) {
+      toast.error('Erro ao salvar configurações');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const activeUsers = stats.activeUsers;
+  const totalBase = stats.totalUsers || 1;
+  const engagementRate = Math.round((activeUsers / totalBase) * 100);
 
   return (
     <div className={styles.adminContainer}>
@@ -103,12 +110,21 @@ export default function AdminDashboardPage() {
             >
               Histórico de Usuários
             </button>
+            <button
+              className={`${styles.tabBtn} ${view === 'config' ? styles.activeTab : ''}`}
+              onClick={() => setView('config')}
+              type="button"
+            >
+              Configurações
+            </button>
           </div>
 
           <div className={styles.chartDisplay}>
             {view === 'resumo' ? (
               <div className={styles.resumoView}>
-                <AdminPieChart data={statusDistribution} activeUsers={activeUsers} />
+                <div className={styles.chartContainer}>
+                    <AdminPieChart data={statusDistribution} activeUsers={activeUsers} />
+                </div>
 
                 <div className={styles.resumoContext}>
                   <h4>Situação atual da base</h4>
@@ -124,30 +140,50 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
-            ) : (
+            ) : view === 'historico' ? (
                 <AdminLineChart data={historyData} />
+            ) : (
+                <div className={styles.configView}>
+                    <form className={styles.settingsForm} onSubmit={handleSaveSettings}>
+                        <div className={styles.field}>
+                            <label>XP por Questão</label>
+                            <input type="number" value={settings.xpPerQuestion} onChange={e => setSettings({...settings, xpPerQuestion: Number(e.target.value)})} />
+                        </div>
+                        <div className={styles.field}>
+                            <label>Moedas por Questão</label>
+                            <input type="number" value={settings.coinsPerQuestion} onChange={e => setSettings({...settings, coinsPerQuestion: Number(e.target.value)})} />
+                        </div>
+                        <div className={styles.field}>
+                            <label>Média para Aprovação (%)</label>
+                            <input type="number" value={settings.minPassingScore} onChange={e => setSettings({...settings, minPassingScore: Number(e.target.value)})} />
+                        </div>
+                        <button type="submit" className={styles.saveBtn} disabled={isSavingSettings}>
+                            {isSavingSettings ? 'Salvando...' : 'Salvar Parâmetros'}
+                        </button>
+                    </form>
+                </div>
             )}
           </div>
         </div>
 
         <div className={styles.metricsGrid}>
           <div className={styles.balanceCard}>
-            <span className={styles.balanceLabel}>Usuários ativos (mês)</span>
-            <h2 className={styles.balanceValue}>{activeUsers}</h2>
-            <p className={styles.balanceHint}>+124 em relação ao mês anterior</p>
+            <span className={styles.balanceLabel}>Total de Usuários</span>
+            <h2 className={styles.balanceValue}>{stats.totalUsers}</h2>
+            <p className={styles.balanceHint}>Base total cadastrada</p>
           </div>
 
           <div className={styles.miniMetric}>
-            <span className={styles.miniLabel}>Novos</span>
+            <span className={styles.miniLabel}>Quizzes</span>
             <span className={styles.miniValue} style={{ color: '#60a5fa' }}>
-              {newSignups}
+              {stats.totalQuizzes}
             </span>
           </div>
 
           <div className={styles.miniMetric}>
-            <span className={styles.miniLabel}>Reativados</span>
+            <span className={styles.miniLabel}>PROs</span>
             <span className={styles.miniValue} style={{ color: '#f59e0b' }}>
-              {reactivated}
+              {stats.totalSubscriptions}
             </span>
           </div>
 
@@ -182,7 +218,10 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className={styles.activityList}>
-          {recentAdminEvents.map((event) => (
+          {activities.length === 0 && (
+             <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>Nenhuma atividade recente registrada.</div>
+          )}
+          {activities.map((event) => (
             <div key={event.id} className={styles.activityItem}>
               <div
                 className={styles.activityIcon}
@@ -207,7 +246,7 @@ export default function AdminDashboardPage() {
                 <span className={styles.activityTitle}>{event.title}</span>
                 <span className={styles.activityCategory}>{event.details}</span>
               </div>
-              <div className={styles.activityAmount}>{event.date}</div>
+              <div className={styles.activityAmount}>{formatDate(event.date)}</div>
             </div>
           ))}
         </div>
@@ -216,7 +255,7 @@ export default function AdminDashboardPage() {
       <AdminHistoryModal 
         isOpen={isHistoryModalOpen} 
         onClose={() => setIsHistoryModalOpen(false)} 
-        events={recentAdminEvents} 
+        events={activities} 
       />
     </div>
   );

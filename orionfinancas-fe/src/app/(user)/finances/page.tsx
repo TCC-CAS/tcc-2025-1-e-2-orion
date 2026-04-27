@@ -10,6 +10,7 @@ import EditTransactionModal from './components/EditTransactionModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
 import { api } from '@/services/api';
 import toast from 'react-hot-toast';
+import QuickTools from './components/QuickTools';
 
 const MonthlyChart = dynamic(() => import('./components/MonthlyChart'), { 
     ssr: false,
@@ -250,6 +251,8 @@ export default function FinancesPage() {
                     </div>
                 </div>
             </div>
+            
+            <QuickTools />
 
             <div className={styles.recentTransactions}>
                 <div className={styles.tableHeader}>

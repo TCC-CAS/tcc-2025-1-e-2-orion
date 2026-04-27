@@ -129,6 +129,7 @@ export default function Learning() {
   const [streakUpdated, setStreakUpdated] = useState(false);
   const [receivedRewards, setReceivedRewards] = useState<{ xp: number, coins: number } | null>(null);
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
+  const [userQuizResults, setUserQuizResults] = useState<{ question: string, userAnswer: string, correctAnswer: string, isCorrect: boolean }[]>([]);
 
   const fetchData = async () => {
     try {
@@ -257,6 +258,7 @@ export default function Learning() {
     setLessonPhase("content");
     setCurrentQuestionIndex(0);
     setCurrentQuiz(null);
+    setUserQuizResults([]);
   };
 
   const goToQuestions = async () => {
@@ -419,6 +421,14 @@ export default function Learning() {
     
     const correct = currentQuestion?.correctOptionIndex === index;
     setIsCorrect(correct);
+
+    // Salvar resultado para feedback
+    setUserQuizResults(prev => [...prev, {
+      question: currentQuestion.question,
+      userAnswer: currentQuestion.options![index],
+      correctAnswer: currentQuestion.options![currentQuestion.correctOptionIndex!],
+      isCorrect: correct
+    }]);
 
     if (!correct) {
       subtractLife();
@@ -624,7 +634,25 @@ export default function Learning() {
                     </div>
 
                     <div className={styles.ratingSection}>
-                      <p className={styles.ratingTitle}>O que você achou desta aula?</p>
+                      <p className={styles.ratingTitle}>Feedback do Quiz</p>
+                      <div className={styles.quizFeedbackList}>
+                        {userQuizResults.map((res, i) => (
+                          <div key={i} className={`${styles.feedbackItem} ${res.isCorrect ? styles.feedbackCorrect : styles.feedbackWrong}`}>
+                            <div className={styles.feedbackHeader}>
+                              <span>Questão {i + 1}: {res.isCorrect ? "✅ Acertou" : "❌ Errou"}</span>
+                            </div>
+                            <p className={styles.feedbackQuestion}>{res.question}</p>
+                            {!res.isCorrect && (
+                              <p className={styles.feedbackCorrection}>
+                                Sua resposta: <span className={styles.wrongText}>{res.userAnswer}</span><br/>
+                                Resposta correta: <span className={styles.correctText}>{res.correctAnswer}</span>
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className={styles.ratingTitle} style={{ marginTop: '2rem' }}>O que você achou desta aula?</p>
                       <div className={styles.starRating}>
                         {[1, 2, 3, 4, 5].map((s) => (
                           <button 

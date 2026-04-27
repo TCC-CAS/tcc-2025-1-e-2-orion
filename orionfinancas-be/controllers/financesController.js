@@ -17,23 +17,32 @@ const financesController = {
                 .sort({ createdAt: -1 })
                 .toArray();
             
-            // Filtra para manter só a cópia mais recente de cada título (evita que mensalidades de Janeiro, Fevereiro tentem se clonar de novo e criar duplos)
+            // RN23: Lógica de Clonagem de Lançamentos Recorrentes
             const latestRecurringTxs = [];
             const seenTitles = new Set();
             for (const rx of recurringTxs) {
-                if (!seenTitles.has(rx.title.toLowerCase())) {
-                    seenTitles.add(rx.title.toLowerCase());
+                const titleKey = (rx.title || "").toLowerCase();
+                if (!seenTitles.has(titleKey)) {
+                    seenTitles.add(titleKey);
                     latestRecurringTxs.push(rx);
                 }
             }
 
             for (const reqTx of latestRecurringTxs) {
                 const parts = reqTx.date.split('/');
-                const rxDate = parts.length === 3 ? new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00Z`) : new Date(reqTx.createdAt);
+                let txDate;
+                if (parts.length === 3) {
+                    // Garante que a data seja interpretada corretamente
+                    txDate = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                } else {
+                    txDate = new Date(reqTx.createdAt);
+                }
                 
-                // Se o original é do passado
-                if (rxDate.getMonth() !== currentMonth || rxDate.getFullYear() !== currentYear) {
-                    // Checa se já existe ALGO com esse título neste exato mês
+                // Se o lançamento original é de um mês/ano anterior ao atual
+                const isFromPast = txDate.getFullYear() < currentYear || (txDate.getFullYear() === currentYear && txDate.getMonth() < currentMonth);
+
+                if (isFromPast) {
+                    // Verifica se já existe uma cópia DESTE título NESTE mês corrente
                     const alreadyCloned = await db.collection('transactions').findOne({
                         userId, 
                         isRecurring: true, 
@@ -42,9 +51,9 @@ const financesController = {
                     });
 
                     if (!alreadyCloned) {
-                        const day = parts[0] || '05';
+                        const day = String(txDate.getDate()).padStart(2, '0');
                         const newDateStr = `${day}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
-                        // Cria com createdAt ligeiramente adiantado para ficar no topo da lista do dia
+                        
                         await db.collection('transactions').insertOne({
                             userId,
                             type: reqTx.type,
@@ -53,8 +62,10 @@ const financesController = {
                             category: reqTx.category,
                             date: newDateStr,
                             isRecurring: true,
-                            createdAt: new Date()
+                            createdAt: new Date(),
+                            clonedFrom: reqTx._id // Rastro para auditoria
                         });
+                        console.log(`[RN23] Lançamento "${reqTx.title}" clonado para ${newDateStr}`);
                     }
                 }
             }

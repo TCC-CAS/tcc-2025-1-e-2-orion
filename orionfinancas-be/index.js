@@ -12,6 +12,7 @@ const shopRoutes = require('./routes/shop.js');
 const financesRoutes = require('./routes/finances.js');
 const { contentSecurityPolicy } = require('helmet');
 const authRoutes = require('./routes/auth.js');
+const contactRoutes = require('./routes/contact.js');
 const bodyParser = require('body-parser');
 const express = require('express');
 const helmet = require('helmet');
@@ -60,6 +61,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/subscriptions', subscriptionsRoutes);
 app.use('/api/shop', shopRoutes);
 app.use('/api/finances', financesRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/', (req, res) => {
     res.json({

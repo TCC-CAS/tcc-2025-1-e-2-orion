@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import styles from '../UserLists.module.css';
 import { api } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
+import toast from 'react-hot-toast';
 
 import RewardModal from './components/RewardModal';
 
@@ -60,11 +61,11 @@ export default function MissionsPage() {
                 fetchMissions(); // Refresh list
                 refreshProfile(); // Refresh sidebar stats
             } else {
-                alert(response.message || 'Erro ao resgatar recompensa.');
+                toast.error(response.message || 'Erro ao resgatar recompensa.', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' } });
             }
         } catch (error) {
             console.error('Erro ao resgatar:', error);
-            alert('Falha interna ao resgatar recompensa.');
+            toast.error('Falha interna ao resgatar recompensa.', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' } });
         }
     };
 

@@ -75,6 +75,39 @@ const emailService = {
             console.log(error.message)
             return false;
         }
+    },
+
+    async sendContactEmail(name, email, subject, message) {
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: process.env.EMAIL_USER, // The project receives the email
+            replyTo: email, // User's email for reply
+            subject: `Fale Conosco: ${subject} - ${name}`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                    <h2 style="color: #00f2a9;">Nova Mensagem de Contato</h2>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6;">
+                        <p><strong>Nome:</strong> ${name}</p>
+                        <p><strong>E-mail:</strong> ${email}</p>
+                        <p><strong>Assunto:</strong> ${subject}</p>
+                        <hr style="border: none; border-top: 1px solid #dee2e6; margin: 15px 0;">
+                        <p><strong>Mensagem:</strong></p>
+                        <p style="white-space: pre-wrap;">${message}</p>
+                    </div>
+                    <p style="font-size: 12px; color: #6c757d; margin-top: 20px;">
+                        Recebido via formulário Fale Conosco - Orion Finanças
+                    </p>
+                </div>
+            `
+        };
+
+        try {
+            await this.transporter.sendMail(mailOptions);
+            return true;
+        } catch (error) {
+            console.error('Erro ao enviar email de contato:', error);
+            return false;
+        }
     }
 };
 

@@ -1,6 +1,7 @@
 const { getDB } = require("../config/database.js");
 const { ObjectId } = require("mongodb");
 const streakService = require("../services/streakService.js");
+const notificationService = require("../services/notificationService.js");
 
 const accountController = { 
     getProfile: async (req, res) => {
@@ -414,6 +415,24 @@ const accountController = {
         }
     },
 
+    getAdminStats: async (req, res) => {
+        try {
+            const db = getDB();
+            const totalUsers = await db.collection('users').countDocuments();
+            const totalLessons = await db.collection('user_lesson_progress').countDocuments({ status: 'COMPLETED' });
+            const totalRevenue = await db.collection('subscriptions').countDocuments({ status: 'ACTIVE' }) * 29.90;
+
+            return res.json({
+                message: 'Estatísticas do admin obtidas',
+                status: 'OK',
+                data: { totalUsers, totalLessons, totalRevenue }
+            });
+        } catch (error) {
+            console.error('Erro getAdminStats:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
     getNotifications: async (req, res) => {
         try {
             const db = getDB();
@@ -432,6 +451,23 @@ const accountController = {
             });
         } catch (error) {
             console.error('Erro getNotifications:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    markNotificationsRead: async (req, res) => {
+        try {
+            const db = getDB();
+            const userId = new ObjectId(req.user.id);
+
+            await db.collection("notifications").updateMany(
+                { userId, read: false },
+                { $set: { read: true } }
+            );
+
+            return res.json({ message: 'Notificações lidas', status: 'OK' });
+        } catch (error) {
+            console.error('Erro ao ler notificações:', error);
             return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
         }
     },
@@ -521,9 +557,153 @@ const accountController = {
                 { upsert: true }
             );
 
+            await notificationService.createNotification(userId, "Sucesso no Upgrade!", "Sua assinatura PRO foi ativada. Agora você tem vidas infinitas e o dobro de recompensas!", "SUBSCRIPTION");
+
             return res.json({ message: 'Usuário agora é Premium!', status: 'OK' });
         } catch (error) {
             console.error('Erro setPremium:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    cancelSubscription: async (req, res) => {
+        try {
+            const db = getDB();
+            const userId = new ObjectId(req.user.id);
+
+            const result = await db.collection('subscriptions').updateOne(
+                { userId, status: 'ACTIVE' },
+                { $set: { status: 'CANCELED', updatedAt: new Date() } }
+            );
+
+            if (result.modifiedCount === 0) {
+                return res.status(404).json({ message: 'Nenhuma assinatura ativa encontrada para cancelar.', status: 'ERROR' });
+            }
+
+            await notificationService.createNotification(userId, "Assinatura Cancelada", "Sua assinatura PRO foi cancelada com sucesso. Você ainda terá acesso aos benefícios até o final do período vigente.", "SUBSCRIPTION");
+
+            return res.json({ message: 'Assinatura cancelada com sucesso', status: 'OK' });
+        } catch (error) {
+            console.error('Erro cancelSubscription:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    getAdminStats: async (req, res) => {
+        try {
+            const db = getDB();
+            const totalUsers = await db.collection('users').countDocuments();
+            const activeUsers = await db.collection('users').countDocuments({ "isActive": { $ne: false } });
+            const totalQuizzes = await db.collection('user_quiz_attempts').countDocuments();
+            const totalSubscriptions = await db.collection('subscriptions').countDocuments({ status: 'ACTIVE' });
+
+            return res.json({
+                message: 'Estatísticas obtidas',
+                status: 'OK',
+                data: {
+                    totalUsers,
+                    activeUsers,
+                    totalQuizzes,
+                    totalSubscriptions
+                }
+            });
+        } catch (error) {
+            console.error('Erro getAdminStats:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    getAdminActivity: async (req, res) => {
+        try {
+            const db = getDB();
+            
+            // Buscar as últimas 5 atividades de diferentes tipos
+            const recentUsers = await db.collection('users')
+                .find({}, { projection: { "profile.name": 1, createdAt: 1 } })
+                .sort({ createdAt: -1 })
+                .limit(3)
+                .toArray();
+
+            const recentQuizzes = await db.collection('user_quiz_attempts')
+                .find({})
+                .sort({ attemptedAt: -1 })
+                .limit(3)
+                .toArray();
+
+            // Formatar para o padrão do frontend
+            const activity = [
+                ...recentUsers.map(u => ({
+                    id: u._id,
+                    title: 'Novo usuário cadastrado',
+                    details: `${u.profile?.name || 'Usuário'} entrou na plataforma`,
+                    date: u.createdAt,
+                    type: 'info'
+                })),
+                ...recentQuizzes.map(q => ({
+                    id: q._id,
+                    title: 'Quiz finalizado',
+                    details: `Um usuário completou um quiz com score ${q.score}`,
+                    date: q.attemptedAt,
+                    type: 'success'
+                }))
+            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+            return res.json({
+                message: 'Atividades obtidas',
+                status: 'OK',
+                data: activity
+            });
+        } catch (error) {
+            console.error('Erro getAdminActivity:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    getSystemSettings: async (req, res) => {
+        try {
+            const db = getDB();
+            let settings = await db.collection('settings').findOne({ type: 'global' });
+            
+            if (!settings) {
+                // Configurações padrão caso não existam
+                settings = {
+                    type: 'global',
+                    xpPerQuestion: 10,
+                    coinsPerQuestion: 5,
+                    minPassingScore: 70,
+                    updatedAt: new Date()
+                };
+                await db.collection('settings').insertOne(settings);
+            }
+
+            return res.json({ status: 'OK', data: settings });
+        } catch (error) {
+            console.error('Erro getSystemSettings:', error);
+            return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
+        }
+    },
+
+    updateSystemSettings: async (req, res) => {
+        try {
+            const db = getDB();
+            const { xpPerQuestion, coinsPerQuestion, minPassingScore } = req.body;
+
+            await db.collection('settings').updateOne(
+                { type: 'global' },
+                { 
+                    $set: { 
+                        xpPerQuestion: Number(xpPerQuestion),
+                        coinsPerQuestion: Number(coinsPerQuestion),
+                        minPassingScore: Number(minPassingScore),
+                        updatedAt: new Date()
+                    } 
+                },
+                { upsert: true }
+            );
+
+            return res.json({ message: 'Configurações atualizadas com sucesso', status: 'OK' });
+        } catch (error) {
+            console.error('Erro updateSystemSettings:', error);
             return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
         }
     }

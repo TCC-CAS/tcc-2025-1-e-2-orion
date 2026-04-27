@@ -5,6 +5,7 @@ import styles from '../UserLists.module.css';
 import GoalModal from './components/GoalModal';
 import DeleteGoalModal from './components/DeleteGoalModal';
 import { api } from '@/services/api';
+import toast from 'react-hot-toast';
 
 export default function GoalsPage() {
     const [goals, setGoals] = useState<any[]>([]);
@@ -12,11 +13,11 @@ export default function GoalsPage() {
 
     const [currentBalance, setCurrentBalance] = useState(0);
 
-    const fetchProfileData = useCallback(async () => {
+    const fetchBalance = useCallback(async () => {
         try {
-            const res = await api.get('/account/profile');
+            const res = await api.get('/finances/dashboard');
             if (res.status === 'OK' && res.data) {
-                setCurrentBalance(res.data.wallet?.balance || 0);
+                setCurrentBalance(res.data.balance || 0);
             }
         } catch (err) {
             console.error('Erro ao buscar saldo:', err);
@@ -73,8 +74,8 @@ export default function GoalsPage() {
 
     useEffect(() => {
         fetchGoals();
-        fetchProfileData();
-    }, [fetchGoals, fetchProfileData]);
+        fetchBalance();
+    }, [fetchGoals, fetchBalance]);
 
     const openCreateModal = useCallback(() => {
         setIsEditing(false);
@@ -115,6 +116,7 @@ export default function GoalsPage() {
                 const res = await api.put('/goals/update-goal', payload);
                 if (res.status === 'OK') {
                     fetchGoals();
+                    fetchBalance();
                 }
             } else {
                 const payload = {
@@ -128,11 +130,12 @@ export default function GoalsPage() {
                 const res = await api.post('/goals/create-goal', payload);
                 if (res.status === 'OK') {
                     fetchGoals();
+                    fetchBalance();
                 }
             }
         } catch (err) {
             console.error('Erro ao salvar meta:', err);
-            alert('Erro ao conectar com o servidor');
+            toast.error('Erro ao conectar com o servidor', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' } });
         }
         setIsModalOpen(false);
     }, [isEditing, editingId, fetchGoals]);
@@ -148,6 +151,7 @@ export default function GoalsPage() {
                 const res = await api.delete('/goals/delete-goal', { _id: goalToDelete.id });
                 if (res.status === 'OK') {
                     fetchGoals();
+                    fetchBalance();
                 }
             } catch (err) {
                 console.error('Erro ao deletar meta:', err);

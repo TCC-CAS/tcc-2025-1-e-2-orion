@@ -4,6 +4,7 @@ const { ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const missionService = require('../services/missionService');
+const notificationService = require('../services/notificationService');
 require('dotenv').config();
 
 const RESET_SECRET = process.env.JWT_RESET_SECRET;
@@ -202,6 +203,21 @@ const authController = {
                     });
                 }
                 birthdateDate = new Date(birthdate);
+                
+                // Validação de Faixa Etária (15 a 25 anos) - RN01
+                const today = new Date();
+                let age = today.getFullYear() - birthdateDate.getFullYear();
+                const m = today.getMonth() - birthdateDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < birthdateDate.getDate())) {
+                    age--;
+                }
+
+                if (age < 15 || age > 25) {
+                    return res.status(400).json({
+                        message: 'A plataforma Órion é exclusiva para jovens entre 15 e 25 anos.',
+                        status: 'ERROR'
+                    });
+                }
             }
 
             const payload = { 
@@ -219,6 +235,8 @@ const authController = {
             }
 
             const registerUser = await usersCollection.insertOne(payload);
+
+            await notificationService.createNotification(registerUser.insertedId, "Bem-vindo(a) ao Órion!", "Ficamos muito felizes em ter você aqui. Explore nossos cursos e comece sua jornada financeira!", "GENERAL");
 
             res.status(201).json({
                 message: 'Usuário registrado com sucesso',

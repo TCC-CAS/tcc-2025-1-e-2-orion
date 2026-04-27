@@ -310,7 +310,14 @@ const quizzesController = {
             const normalizedScore = scoreValue > totalQuestions
                 ? (scoreValue / 100) * totalQuestions
                 : scoreValue;
-            const passed = normalizedScore >= (totalQuestions * 0.7); // 70% to pass
+
+            // Fetch dynamic settings (RN15)
+            const settings = await db.collection('settings').findOne({ type: 'global' });
+            const minPassingPercent = settings?.minPassingScore || 70;
+            const xpPerQ = settings?.xpPerQuestion || 10;
+            const coinsPerQ = settings?.coinsPerQuestion || 5;
+
+            const passed = normalizedScore >= (totalQuestions * (minPassingPercent / 100));
 
             // Check if already passed in the past
             const previousPass = await db.collection("user_quiz_attempts").findOne({
@@ -340,11 +347,14 @@ const quizzesController = {
             // Trigger generic quiz completion
             await missionService.updateProgress(userId, "COMPLETE_QUIZ");
 
-            // Award base rewards (+30 XP, +10 Coins) or reduced if already passed (+5 XP, +5 Coins)
+            // Award base rewards or reduced if already passed
             let rewards = null;
             let streakUpdated = false;
             if (passed) {
-                let rewardAmount = isAlreadyPassed ? { xp: 5, coins: 5 } : { xp: 30, coins: 10 };
+                // Cálculo dinâmico baseado nas questões (RN15)
+                let rewardAmount = isAlreadyPassed 
+                    ? { xp: 5, coins: 5 } 
+                    : { xp: xpPerQ * totalQuestions, coins: coinsPerQ * totalQuestions };
                 
                 // Double rewards for PRO users
                 const subscription = await db.collection('subscriptions').findOne({ userId: new ObjectId(userId), status: 'ACTIVE' });

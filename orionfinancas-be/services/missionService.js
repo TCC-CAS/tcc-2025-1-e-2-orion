@@ -1,6 +1,7 @@
 const { getDB } = require("../config/database.js");
 const { ObjectId } = require("mongodb");
 const rewardService = require("./rewardService.js");
+const notificationService = require("./notificationService.js");
 
 const missionService = {
     /**
@@ -34,6 +35,10 @@ const missionService = {
                         status: status,
                         updatedAt: new Date()
                     });
+                    
+                    if (status === "COMPLETED") {
+                        await notificationService.createNotification(userId, "Missão Concluída!", `Parabéns! Você concluiu a missão: ${mission.title}`, "MISSION");
+                    }
                 } else if (userMission.status === "IN_PROGRESS") {
                     // Update existing progress
                     const newCount = userMission.currentCount + 1;
@@ -49,6 +54,10 @@ const missionService = {
                             }
                         }
                     );
+
+                    if (newStatus === "COMPLETED" && userMission.status !== "COMPLETED") {
+                        await notificationService.createNotification(userId, "Missão Concluída!", `Parabéns! Você concluiu a missão: ${mission.title}`, "MISSION");
+                    }
                 }
             }
         } catch (error) {

@@ -22,6 +22,8 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
   const notificationsRef = useRef<HTMLDivElement | null>(null);
 
   const [notifications, setNotifications] = useState<any[]>([]);
+  
+  const hasUnread = notifications.some(n => !n.read);
 
   useEffect(() => {
     if (variant === 'logged' && !hideNotifications) {
@@ -61,6 +63,17 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
     };
   }, []);
 
+  const handleNotificationsToggle = () => {
+    if (!isNotificationsOpen && hasUnread) {
+      api.put('/account/notifications/mark-read', {})
+        .then(() => {
+          setNotifications(prev => prev.map(n => ({...n, read: true})));
+        })
+        .catch(err => console.error('Erro ao ler notificações:', err));
+    }
+    setIsNotificationsOpen((prev) => !prev);
+  };
+
   return (
     <header className={`${styles.header} ${styles[variant]}`}>
       <div className={styles.container}>
@@ -87,9 +100,12 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
                 <div className={styles.dropdownWrapper} ref={notificationsRef}>
                   <button
                     className={styles.iconBtn}
-                    onClick={() => setIsNotificationsOpen((prev) => !prev)}
+                    onClick={handleNotificationsToggle}
                   >
-                    <Bell size={20} color="var(--text-primary)" />
+                    <div style={{ position: 'relative' }}>
+                      <Bell size={20} color="var(--text-primary)" />
+                      {hasUnread && <span className={styles.unreadBadge}></span>}
+                    </div>
                   </button>
 
                   {isNotificationsOpen && (
@@ -105,7 +121,7 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
                           {notifications.map((notification) => (
                             <li
                               key={notification.id || notification._id}
-                              className={styles.notificationItem}
+                              className={`${styles.notificationItem} ${!notification.read ? styles.unread : ''}`}
                             >
                               <div className={styles.notificationTitle}>
                                 {notification.title}

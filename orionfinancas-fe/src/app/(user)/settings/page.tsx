@@ -6,6 +6,7 @@ import { ArrowLeft, Trash2 } from 'lucide-react';
 import styles from './Settings.module.css';
 import DeleteAccountModal from './components/DeleteAccountModal';
 import UpdatePlanModal from './components/UpdatePlanModal';
+import CancelSubscriptionModal from './components/CancelSubscriptionModal';
 import { api } from '@/services/api';
 import toast from 'react-hot-toast';
 
@@ -13,6 +14,7 @@ export default function SettingsPage() {
     const [activeTab, setActiveTab] = useState('profile');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
     const [userData, setUserData] = useState({ name: '', email: '' });
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -38,6 +40,20 @@ export default function SettingsPage() {
         toast.success(isGr ? "Plano Mensal habilitado!" : "Upgrade solicitado para o Plano Anual!", { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' } });
         setIsPlanModalOpen(false);
     }, [subscription]);
+
+    const handleCancelSubscription = async () => {
+        try {
+            const res = await api.post('/account/cancel-subscription', {});
+            if (res.status === 'OK') {
+                toast.success('Assinatura cancelada com sucesso.', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #ef4444' } });
+                // Refresh data
+                const profileRes = await api.get('/account/profile');
+                if (profileRes.status === 'OK') setSubscription(profileRes.data.subscription || null);
+            }
+        } catch (err) {
+            toast.error('Erro ao cancelar assinatura');
+        }
+    };
 
     const handleSaveProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -214,8 +230,8 @@ export default function SettingsPage() {
                                     >
                                         Mudar Plano
                                     </button>
-                                    {subscription && (
-                                        <button className={styles.dangerBtn}>Cancelar Assinatura</button>
+                                    {subscription && subscription.status === 'ACTIVE' && (
+                                        <button className={styles.dangerBtn} onClick={() => setIsCancelModalOpen(true)}>Cancelar Assinatura</button>
                                     )}
                                 </div>
                             </div>
@@ -235,6 +251,12 @@ export default function SettingsPage() {
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteAccount}
+            />
+
+            <CancelSubscriptionModal 
+                isOpen={isCancelModalOpen}
+                onClose={() => setIsCancelModalOpen(false)}
+                onConfirm={handleCancelSubscription}
             />
         </div>
     );

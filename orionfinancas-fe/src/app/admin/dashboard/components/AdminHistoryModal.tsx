@@ -12,6 +12,16 @@ interface AdminHistoryModalProps {
 const AdminHistoryModal: React.FC<AdminHistoryModalProps> = ({ isOpen, onClose, events }) => {
     if (!isOpen) return null;
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    };
+
     return (
         <div
             className={styles.modalOverlay}
@@ -64,7 +74,7 @@ const AdminHistoryModal: React.FC<AdminHistoryModalProps> = ({ isOpen, onClose, 
                                                     : 'Sucesso'}
                                         </span>
                                     </td>
-                                    <td>{event.date}</td>
+                                    <td>{formatDate(event.date)}</td>
                                 </tr>
                             ))}
                         </tbody>
