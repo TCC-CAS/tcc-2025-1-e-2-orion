@@ -62,6 +62,7 @@ const streakService = {
             );
 
             console.log(`[Streak] User ${userId} streak updated to ${newStreak}.`);
+
             return { streak: newStreak, updated: true };
         } catch (error) {
             console.error("Erro ao atualizar ofensiva:", error);

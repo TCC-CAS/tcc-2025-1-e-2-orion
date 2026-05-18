@@ -203,6 +203,42 @@
   flex-direction: column;
   gap: 1.5rem;
   animation: slideUp 0.5s ease-out;
+  overflow: hidden;
+}
+
+.activeModuleContainer::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: 
+    radial-gradient(1.5px 1.5px at 15% 25%, rgba(255, 255, 255, 0.3) 100%, transparent),
+    radial-gradient(2px 2px at 85% 45%, rgba(255, 255, 255, 0.4) 100%, transparent),
+    radial-gradient(1px 1px at 25% 65%, rgba(255, 255, 255, 0.2) 100%, transparent),
+    radial-gradient(2.5px 2.5px at 80% 85%, rgba(0, 242, 169, 0.15) 100%, transparent),
+    radial-gradient(1px 1px at 50% 10%, rgba(255, 255, 255, 0.2) 100%, transparent),
+    radial-gradient(3px 3px at 20% 80%, rgba(255, 215, 0, 0.1) 100%, transparent),
+    radial-gradient(1.5px 1.5px at 70% 15%, rgba(255, 255, 255, 0.3) 100%, transparent);
+  background-size: 100% 100%;
+}
+
+.activeModuleContainer::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg width='70' height='70' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 215, 0, 0.08)' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 24 24' fill='rgba(239, 68, 68, 0.04)' stroke='rgba(239, 68, 68, 0.08)' stroke-width='2' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='110' height='110' viewBox='0 0 24 24' fill='rgba(0, 242, 169, 0.03)' stroke='rgba(0, 242, 169, 0.08)' stroke-width='2' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='90' height='90' viewBox='0 0 24 24' fill='rgba(14, 165, 233, 0.03)' stroke='rgba(14, 165, 233, 0.07)' stroke-width='2' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='12 2 22 8.5 12 22 2 8.5 12 2'/%3E%3Cline x1='12' y1='22' x2='12' y2='2'/%3E%3Cline x1='22' y1='8.5' x2='2' y2='8.5'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='130' height='130' viewBox='0 0 24 24' fill='rgba(139, 92, 246, 0.02)' stroke='rgba(139, 92, 246, 0.05)' stroke-width='2' stroke-linejoin='round' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 24 24' fill='none' stroke='rgba(255, 215, 0, 0.06)' stroke-width='2' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Ccircle cx='12' cy='12' r='5'/%3E%3Cline x1='12' y1='5' x2='12' y2='19'/%3E%3C/svg%3E");
+  background-position: 8% 25%, 88% 65%, 15% 75%, 85% 20%, 50% 85%, 92% 10%;
+  background-repeat: no-repeat;
+  background-size: auto;
 }
 
 .trailHeader {
@@ -264,6 +300,31 @@
 .trailDocMeta {
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+/* Decorações laterais flutuantes da trilha */
+.trailDecoLeft,
+.trailDecoRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 18%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.trailDecoLeft { left: 0; }
+.trailDecoRight { right: 0; }
+
+.decoItem {
+  position: absolute;
+  animation: floatDeco 6s ease-in-out infinite;
+}
+
+@keyframes floatDeco {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-10px) rotate(5deg); }
+  66%       { transform: translateY(5px) rotate(-3deg); }
 }
 
 /* Caminho de lições no estilo Duolingo: vertical, cada nó = uma lição */
@@ -694,6 +755,157 @@
   opacity: 0.6;
 }
 
+/* Battle Arena Styles */
+.battleArena {
+  width: 100%;
+  height: 180px;
+  border-radius: 20px;
+  margin-bottom: 2rem;
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.battleArena::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 200, 150, 0.04) 3px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+.battleArena::after {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: -50%;
+  width: 200%;
+  height: 70%;
+  background-image: 
+    linear-gradient(transparent 90%, rgba(0, 200, 150, 0.15) 100%),
+    linear-gradient(90deg, transparent 90%, rgba(0, 200, 150, 0.15) 100%);
+  background-size: 30px 30px;
+  transform: perspective(200px) rotateX(60deg);
+  z-index: 1;
+  pointer-events: none;
+  mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+}
+
+.playerSide, .enemySide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  z-index: 2;
+  width: 120px;
+}
+
+.vsIndicator {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.2em;
+  font-style: italic;
+  z-index: 1;
+}
+
+.spriteContainer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.placeholderSprite {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--dark-bg);
+  font-weight: 800;
+  font-size: 0.8rem;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  position: relative;
+}
+
+.playerSpriteColor {
+  background: var(--primary-color);
+}
+
+.enemySpriteColor {
+  background: #ff5722;
+}
+
+.spriteLabel {
+  font-size: 0.5rem;
+  opacity: 0.8;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hiddenImage {
+  display: none; /* User will remove this to show real sprite */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.healthBar {
+  width: 100px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.healthFillPlayer {
+  height: 100%;
+  background: linear-gradient(90deg, #00c896, #00ffcc);
+  transition: width 0.3s ease;
+}
+
+.healthFillEnemy {
+  height: 100%;
+  background: linear-gradient(90deg, #d84315, #ff8a65);
+  transition: width 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-5deg); filter: brightness(2) contrast(1.5); }
+  50% { transform: translateX(5px) rotate(5deg); filter: brightness(2) contrast(1.5); }
+  75% { transform: translateX(-5px) rotate(-5deg); filter: brightness(2) contrast(1.5); }
+  100% { transform: translateX(0); }
+}
+
+.hurtAnimation {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
 .quizOptions {
   display: flex;
   flex-direction: column;
@@ -800,13 +1012,14 @@
 }
 
 .matchingItem {
-  padding: 1rem;
+  padding: 1.25rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  min-height: 3.5rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  min-height: 5rem;
   display: flex;
   align-items: center;
 }
@@ -822,7 +1035,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 1.25rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
@@ -830,6 +1043,7 @@
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
   user-select: none;
   touch-action: none;
+  min-height: 5rem;
 }
 
 .dragDropItem:hover {
@@ -856,7 +1070,9 @@
 
 .dragDropText {
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  flex: 1;
 }
 
 /* Conclusão de Lição - Wireframe */
@@ -1044,8 +1260,111 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* ---------- Study View (aulas) ---------- */
+  .studyViewContainer {
+    padding: 0.5rem 0.5rem;
+  }
+
+  .studyCard {
+    padding: 1.25rem 1rem;
+    border-radius: 18px;
+    min-height: auto;
+  }
+
   .studyLayout {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .studyTextContent {
+    font-size: 1rem;
+    line-height: 1.6;
+    gap: 1rem;
+  }
+
+  .studyLessonTitle {
+    font-size: 1.25rem;
+  }
+
+  /* Image placeholder shouldn't take a full square on mobile */
+  .studyImagePlaceholder {
+    aspect-ratio: auto;
+    max-height: 180px;
+  }
+
+  /* ---------- Feedback / rating ---------- */
+  .ratingSection {
+    padding-top: 1.25rem;
+  }
+
+  .feedbackBox {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .feedbackInput {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .btnSendFeedback {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    justify-content: center;
+  }
+
+  /* ---------- Study actions (Voltar / Próximo) ---------- */
+  .studyActions {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .studyBtnBack,
+  .studyBtnNext {
+    padding: 0.85rem 1.5rem;
+    font-size: 0.9rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Star rating: don't let it overflow */
+  .starBtn svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* Back button no longer absolute on mobile (avoids overlapping title) */
+  .backToModulesBtn {
+    position: static;
+    align-self: flex-start;
+    margin-bottom: 0.5rem;
+  }
+
+  .trailHeader {
+    align-items: stretch;
+    padding-top: 0;
+  }
+
+  /* ---------- Trail nodes: força centralização no mobile ----------
+     No desktop os nós usam translateX inline (estilo Duolingo zig-zag);
+     no celular o zig-zag não cabe, então neutralizamos os transforms
+     e desenhamos um conector vertical reto no centro. */
+  .nodeWrapper {
+    transform: none !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .simpleConnector {
+    left: 50% !important;
+    width: 0 !important;
+    height: 116px !important;
+    top: 42px !important;
+    border: none !important;
+    border-left: 4px dashed rgba(255, 255, 255, 0.22) !important;
+    border-radius: 0 !important;
+    transform: translateX(-2px) !important;
   }
 }
 
@@ -1107,9 +1426,9 @@
   background: rgba(30, 41, 59, 1);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  padding: 1.5rem 2.5rem; /* Padding interno menor */
+  padding: 2.5rem 3rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
-  height: 420px; /* Mais compacto para evitar scroll externo total */
+  min-height: 420px;
   display: flex;
   flex-direction: column;
 }
@@ -1117,10 +1436,8 @@
 .studyLayout {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
-  gap: 3rem;
-  align-items: center;
-  height: 100%; /* Ocupa toda a altura do card fixo */
-  overflow: hidden;
+  gap: 4rem;
+  align-items: start;
 }
 
 .studyTextContent {
@@ -1130,9 +1447,6 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-height: 100%;
-  overflow-y: auto;
-  padding-right: 1.5rem; /* Espaço para o scrollbar */
 }
 
 /* Scrollbar personalizada e elegante */
@@ -1378,4 +1692,121 @@
   border-right: 12px solid transparent;
   border-top: 12px solid rgba(15, 23, 42, 0.98);
   filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2));
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .lessonLayout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .lessonCardLarge, .lessonContentBox {
+    max-width: 100%;
+  }
+
+  .modulesGrid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .modulesContainer {
+    padding: 1rem;
+  }
+
+  .activeModuleContainer {
+    padding: 1.5rem 1rem;
+    border-radius: 20px;
+  }
+
+  /* Centralizar e alinhar a trilha perfeitamente no mobile */
+  .trailStep {
+    left: 50% !important;
+  }
+
+  .simpleConnector {
+    left: 50% !important;
+    width: 0 !important;
+    border-left: 4px dashed rgba(255, 255, 255, 0.22) !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-right: none !important;
+    transform: translateX(-50%);
+  }
+
+  /* Ajustes da Arena de Batalha */
+  .battleArena {
+    padding: 0 0.5rem;
+    height: 140px; 
+    border-radius: 16px;
+  }
+
+  .playerSide, .enemySide {
+    width: 80px;
+  }
+
+  .spriteContainer {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  .spriteLabel {
+    bottom: -15px !important;
+    font-size: 0.7rem;
+  }
+
+  .vsIndicator {
+    font-size: 1.2rem;
+  }
+
+  /* Textos e Botões */
+  .quizOptions {
+    gap: 0.75rem;
+  }
+
+  .quizOptionButton {
+    padding: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+  
+  .trailSubtitle {
+    font-size: 1.2rem;
+  }
+
+  .studyActions {
+    flex-direction: column-reverse;
+    gap: 1rem;
+  }
+
+  .studyBtnBack, .studyBtnNext {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardStats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .progressValue {
+    margin-left: 0;
+  }
+
+  .feedbackOverlay {
+    padding: 1rem;
+  }
+
+  .feedbackCard {
+    padding: 1.5rem 1rem;
+  }
 }

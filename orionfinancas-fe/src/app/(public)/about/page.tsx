@@ -120,7 +120,7 @@ export default function AboutPage() {
         <h2>O futuro do Órion</h2>
         <p>
           Estamos construindo uma plataforma cada vez mais completa,
-          incluindo áreas de investimento, inteligência financeira e
+          incluindo áreas de Educação Financeira, inteligência financeira e
           personalização baseada em dados.
         </p>
         <p>

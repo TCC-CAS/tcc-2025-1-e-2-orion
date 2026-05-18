@@ -27,8 +27,8 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose
                     <AlertTriangle size={48} color="#ff6464" />
                 </div>
                 <p className={styles.confirmText}>
-                    Tem certeza que deseja <strong>excluir permanentemente</strong> sua conta?<br />
-                    Todos os seus dados, lições e conquistas serão perdidos para sempre.
+                    Tem certeza que deseja <strong>excluir</strong> sua conta?<br />
+                    Suas informações serão tratadas conforme nossa política de retenção de dados, e você perderá o acesso às suas lições e conquistas.
                 </p>
             </div>
             <div className={styles.modalFooter}>
@@ -36,7 +36,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ isOpen, onClose
                     Cancelar
                 </button>
                 <button className={styles.deleteConfirmBtn} onClick={onConfirm}>
-                    Excluir Permanentemente
+                    Confirmar Exclusão
                 </button>
             </div>
         </Modal>

@@ -5,6 +5,7 @@ import React from 'react';
 import { Header } from '@/components/layout/header/Header';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { api } from '@/services/api';
 import {
   LayoutDashboard,
   Users,
@@ -44,19 +45,26 @@ export default function AdminLayout({
 
   React.useEffect(() => {
     if (!isLoginPage) {
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        router.push('/admin/login');
-      } else {
-        setIsCheckingAuth(false);
-      }
+      api.get('/auth/admin/me')
+        .then((res: any) => {
+          if (res.status === 'OK') {
+            setIsCheckingAuth(false);
+          } else {
+            router.push('/admin/login');
+          }
+        })
+        .catch(() => router.push('/admin/login'));
     } else {
       setIsCheckingAuth(false);
     }
   }, [isLoginPage, router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout', {});
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
     router.push('/admin/login');
   };
 
@@ -82,7 +90,7 @@ export default function AdminLayout({
 
   return (
     <div className={styles.adminWrapper}>
-      <Header variant="logged" homeHref="/admin/dashboard" profileHref="/admin/profile" hideNotifications />
+      <Header variant="logged" homeHref="/admin/dashboard" profileHref="/admin/profile" hideNotifications isPremium={true} />
 
       <div className={styles.appLayout}>
         <aside className={styles.sidebarLeft}>

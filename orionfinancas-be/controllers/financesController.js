@@ -7,8 +7,11 @@ const financesController = {
             const db = getDB();
             const userId = new ObjectId(req.user.id);
 
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
+            // Usa fuso horário do Brasil (UTC-3) para evitar que a virada de meia-noite
+            // UTC afete a exibição do mês correto para usuários brasileiros.
+            const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const currentMonth = nowBR.getMonth();
+            const currentYear = nowBR.getFullYear();
             const currentMonthRegex = new RegExp(`/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}$`);
 
             // Pega TODAS recorrentes do usuário, do mais recente pro mais antigo
@@ -28,6 +31,8 @@ const financesController = {
                 }
             }
 
+            const cloneMonth = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+
             for (const reqTx of latestRecurringTxs) {
                 const parts = reqTx.date.split('/');
                 let txDate;
@@ -37,36 +42,38 @@ const financesController = {
                 } else {
                     txDate = new Date(reqTx.createdAt);
                 }
-                
+
                 // Se o lançamento original é de um mês/ano anterior ao atual
                 const isFromPast = txDate.getFullYear() < currentYear || (txDate.getFullYear() === currentYear && txDate.getMonth() < currentMonth);
+                if (!isFromPast) continue;
 
-                if (isFromPast) {
-                    // Verifica se já existe uma cópia DESTE título NESTE mês corrente
-                    const alreadyCloned = await db.collection('transactions').findOne({
-                        userId, 
-                        isRecurring: true, 
-                        title: reqTx.title, 
-                        date: { $regex: currentMonthRegex }
-                    });
+                const day = String(txDate.getDate()).padStart(2, '0');
+                const newDateStr = `${day}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
 
-                    if (!alreadyCloned) {
-                        const day = String(txDate.getDate()).padStart(2, '0');
-                        const newDateStr = `${day}/${String(currentMonth + 1).padStart(2, '0')}/${currentYear}`;
-                        
-                        await db.collection('transactions').insertOne({
-                            userId,
+                // Upsert atômico — se duas requisições paralelas tentarem clonar a
+                // mesma transação no mesmo mês, apenas uma fará insert (RN23).
+                const result = await db.collection('transactions').updateOne(
+                    {
+                        userId,
+                        clonedFrom: reqTx._id,
+                        cloneMonth
+                    },
+                    {
+                        $setOnInsert: {
                             type: reqTx.type,
                             title: reqTx.title,
                             amount: reqTx.amount,
                             category: reqTx.category,
                             date: newDateStr,
                             isRecurring: true,
-                            createdAt: new Date(),
-                            clonedFrom: reqTx._id // Rastro para auditoria
-                        });
-                        console.log(`[RN23] Lançamento "${reqTx.title}" clonado para ${newDateStr}`);
-                    }
+                            createdAt: new Date()
+                        }
+                    },
+                    { upsert: true }
+                );
+
+                if (result.upsertedCount > 0) {
+                    console.log(`[RN23] Lançamento "${reqTx.title}" clonado para ${newDateStr}`);
                 }
             }
 
@@ -142,7 +149,7 @@ const financesController = {
                 insightHtml = `Alerta: Seus gastos (R$ ${expenses.toFixed(2).replace('.', ',')}) superaram suas entradas neste mês. Reveja suas despesas.`;
             } else if (reservaGoal) {
                 if (reservaGoal.currentAmount >= reservaGoal.targetAmount) {
-                    insightHtml = `Excelente! Sua <strong>${reservaGoal.goalName}</strong> foi alcançada. Foque agora em investimentos a longo prazo.`;
+                    insightHtml = `Excelente! Sua <strong>${reservaGoal.goalName}</strong> foi alcançada. Que tal definir uma nova meta financeira?`;
                 } else {
                     const faltam = (reservaGoal.targetAmount - (reservaGoal.currentAmount || 0)).toFixed(2).replace('.', ',');
                     insightHtml = `Foque em sua <strong>${reservaGoal.goalName}</strong> para te dar segurança (Faltam R$ ${faltam}).`;
@@ -152,14 +159,17 @@ const financesController = {
             } else if (income > 0 && fixed > (income * 0.6)) {
                 insightHtml = `Atenção: Seus custos fixos estão muito altos ("esmagando" sua renda livre). Avalie o que pode ser cortado!`;
             } else if (income > 0 && invested >= (income * 0.1)) {
-                insightHtml = `Parabéns! Você investiu mais de 10% dos seus ganhos neste mês. Continue criando esse hábito.`;
+                insightHtml = `Parabéns! Você está reservando mais de 10% dos seus ganhos neste mês. Continue criando esse hábito.`;
             }
+
+            // Sanitize: strip internal fields before sending to client
+            const sanitizedTransactions = transactions.map(({ userId: _u, clonedFrom: _c, ...rest }) => rest);
 
             return res.json({
                 message: 'Dashboard financeiro',
                 status: 'OK',
                 data: {
-                    transactions,
+                    transactions: sanitizedTransactions,
                     income,
                     expenses,
                     invested,
@@ -191,7 +201,7 @@ const financesController = {
                 title,
                 amount: parseFloat(amount),
                 category,
-                date: date || new Date().toLocaleDateString('pt-BR'),
+                date: date || new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
                 isRecurring: !!isRecurring,
                 createdAt: new Date()
             };
@@ -199,7 +209,8 @@ const financesController = {
             const result = await db.collection('transactions').insertOne(newTx);
             newTx._id = result.insertedId;
 
-            return res.json({ message: 'Transação adicionada', status: 'OK', data: newTx });
+            const { userId: _u, ...publicTx } = newTx;
+            return res.json({ message: 'Transação adicionada', status: 'OK', data: publicTx });
         } catch (error) {
             console.error('Erro createTransaction:', error);
             return res.status(500).json({ message: 'Erro interno', status: 'ERROR' });
@@ -211,6 +222,10 @@ const financesController = {
             const db = getDB();
             const userId = new ObjectId(req.user.id);
             const { id, type, title, amount, category, date, isRecurring } = req.body;
+
+            if (!id || !ObjectId.isValid(id)) {
+                return res.status(400).json({ message: 'ID inválido', status: 'ERROR' });
+            }
 
             await db.collection('transactions').updateOne(
                 { _id: new ObjectId(id), userId },
@@ -229,6 +244,10 @@ const financesController = {
             const db = getDB();
             const userId = new ObjectId(req.user.id);
             const { id } = req.body;
+
+            if (!id || !ObjectId.isValid(id)) {
+                return res.status(400).json({ message: 'ID inválido', status: 'ERROR' });
+            }
 
             await db.collection('transactions').deleteOne({ _id: new ObjectId(id), userId });
 

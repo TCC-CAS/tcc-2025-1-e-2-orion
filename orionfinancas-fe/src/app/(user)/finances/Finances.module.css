@@ -1482,3 +1482,102 @@
     line-height: 1.6;
     margin-bottom: 1rem;
 }
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+    .dashboardGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 992px) {
+    .resumoView {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .pieWrapper {
+        order: -1;
+        height: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .financesContainer {
+        padding: 1rem 1rem 5rem 1rem; /* Extra padding at bottom for mobile nav if it exists */
+    }
+
+    .pageTitle {
+        font-size: 1.8rem;
+    }
+
+    .balanceValueHighlight {
+        font-size: 1.8rem;
+    }
+
+    .actionBanner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        text-align: center;
+        padding: 1.25rem;
+    }
+    
+    .addStepBtn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .chartSection {
+        padding: 1.5rem 1rem;
+        border-radius: 20px;
+    }
+
+    .dataBreakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .metricGroup {
+        grid-template-columns: 1fr;
+    }
+
+    .recordsSummary {
+        grid-template-columns: 1fr;
+    }
+
+    .recordsHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .recordsHeaderActions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .activityItem {
+        padding: 1.25rem 1rem;
+        flex-wrap: wrap;
+        position: relative;
+    }
+    
+    .activityMain {
+        min-width: 50%;
+    }
+
+    .actionsCell {
+        position: absolute;
+        top: 1.25rem;
+        right: 1rem;
+    }
+
+    .confirmModalContent, .welcomeModalContent {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+}

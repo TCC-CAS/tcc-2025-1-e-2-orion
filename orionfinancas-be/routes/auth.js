@@ -1,4 +1,5 @@
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middlewares/auth');
 const rateLimit = require('express-rate-limit');
 const express = require('express');
 const cors = require('cors');
@@ -14,7 +15,7 @@ router.use(cors({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: process.env.NODE_ENV === 'test' ? 1000 : 5,
     message: { 
         message: 'Muitas tentativas. Tente novamente em 15 minutos.',
         status: 'ERROR'
@@ -24,13 +25,17 @@ const authLimiter = rateLimit({
 });
 
 router.use('/login', authLimiter);
+router.use('/admin/login', authLimiter);
+router.use('/register', authLimiter);
 router.use('/forgot-password', authLimiter);
 router.use('/reset-password', authLimiter);
 
 // Rotas autenticação
 router.post('/login', authController.login);
 router.post('/admin/login', authController.adminLogin);
+router.get('/admin/me', authMiddleware.verifyAdminToken, authController.adminMe);
 router.post('/register', authController.register);
+router.post('/logout', authController.logout);
 
 // Rotas recovery
 router.post('/forgot-password', authController.forgotPassword);

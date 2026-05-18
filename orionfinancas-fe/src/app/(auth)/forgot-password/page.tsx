@@ -46,6 +46,7 @@ export default function ForgotPasswordPage() {
             <label>Email</label>
             <input
               type="email"
+              maxLength={120}
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

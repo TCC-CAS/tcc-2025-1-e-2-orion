@@ -18,44 +18,47 @@ const missionService = {
                 actionTrigger: actionTrigger
             }).toArray();
 
+            const userObjectId = new ObjectId(userId);
+
             for (const mission of relevantMissions) {
-                // Find or create user mission progress
-                const userMission = await db.collection("user_missions").findOne({
-                    userId: new ObjectId(userId),
-                    missionId: mission._id
-                });
-
-                if (!userMission) {
-                    // Create new progress
-                    const status = 1 >= mission.targetCount ? "COMPLETED" : "IN_PROGRESS";
-                    await db.collection("user_missions").insertOne({
-                        userId: new ObjectId(userId),
+                // Incremento atômico: só roda se a missão ainda está IN_PROGRESS.
+                // Cria com upsert para o primeiro hit. Status COMPLETED/CLAIMED é
+                // imutável aqui (guard contra re-fire após conclusão).
+                const updateResult = await db.collection("user_missions").findOneAndUpdate(
+                    {
+                        userId: userObjectId,
                         missionId: mission._id,
-                        currentCount: 1,
-                        status: status,
-                        updatedAt: new Date()
-                    });
-                    
-                    if (status === "COMPLETED") {
-                        await notificationService.createNotification(userId, "Missão Concluída!", `Parabéns! Você concluiu a missão: ${mission.title}`, "MISSION");
-                    }
-                } else if (userMission.status === "IN_PROGRESS") {
-                    // Update existing progress
-                    const newCount = userMission.currentCount + 1;
-                    const newStatus = newCount >= mission.targetCount ? "COMPLETED" : "IN_PROGRESS";
-
-                    await db.collection("user_missions").updateOne(
-                        { _id: userMission._id },
-                        { 
-                            $set: { 
-                                currentCount: newCount,
-                                status: newStatus,
-                                updatedAt: new Date()
-                            }
+                        $or: [
+                            { status: "IN_PROGRESS" },
+                            { status: { $exists: false } }
+                        ]
+                    },
+                    {
+                        $inc: { currentCount: 1 },
+                        $set: { updatedAt: new Date() },
+                        $setOnInsert: {
+                            userId: userObjectId,
+                            missionId: mission._id,
+                            status: "IN_PROGRESS"
                         }
+                    },
+                    { upsert: true, returnDocument: 'after' }
+                );
+
+                const updated = updateResult?.value || updateResult;
+                if (!updated) continue;
+
+                // Se atingiu o target nesta iteração, marca como COMPLETED de forma
+                // atômica — apenas uma chamada paralela ganha a transição.
+                if (updated.currentCount >= mission.targetCount && updated.status === "IN_PROGRESS") {
+                    const completion = await db.collection("user_missions").findOneAndUpdate(
+                        { _id: updated._id, status: "IN_PROGRESS" },
+                        { $set: { status: "COMPLETED", completedAt: new Date() } },
+                        { returnDocument: 'after' }
                     );
 
-                    if (newStatus === "COMPLETED" && userMission.status !== "COMPLETED") {
+                    const completedDoc = completion?.value || completion;
+                    if (completedDoc) {
                         await notificationService.createNotification(userId, "Missão Concluída!", `Parabéns! Você concluiu a missão: ${mission.title}`, "MISSION");
                     }
                 }

@@ -14,6 +14,7 @@ interface BuyConfirmModalProps {
 
 const BuyConfirmModal: React.FC<BuyConfirmModalProps> = ({ item, isOpen, onClose, onConfirm }) => {
     if (!item) return null;
+    const imageSrc = item.imageUrl || item.img;
 
     return (
         <Modal
@@ -24,7 +25,11 @@ const BuyConfirmModal: React.FC<BuyConfirmModalProps> = ({ item, isOpen, onClose
         >
             <div className={styles.modalHeader}>
                 <div className={styles.modalIcon}>
-                    <img src={item.img} alt={item.name} className={styles.modalImg} />
+                    {imageSrc ? (
+                        <img src={imageSrc} alt={item.name} className={styles.modalImg} />
+                    ) : (
+                        <Coins size={42} color="#ffb800" />
+                    )}
                 </div>
                 <h3 className={styles.modalTitle}>{item.name}</h3>
             </div>

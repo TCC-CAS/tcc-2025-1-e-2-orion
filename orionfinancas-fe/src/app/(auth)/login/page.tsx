@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import styles from './Login.module.css';
-import { signIn } from 'next-auth/react';
+
 import { Button } from '@/components/ui/button/Button';
 import { useState } from 'react';
 import { api } from '@/services/api';
@@ -27,8 +27,7 @@ export default function LoginPage() {
       const data = await api.post('/auth/login', { email, password });
       
       if (data.status === 'OK') {
-        // Por enquanto, salvamos no localStorage para teste básico
-        localStorage.setItem('token', data.token);
+        // O token agora é armazenado e enviado via cookies (HttpOnly) de forma segura
         
         // Carrega o perfil imediatamente para que já apareça no dashboard
         await refreshProfile();
@@ -37,8 +36,9 @@ export default function LoginPage() {
       } else {
         setError(data.message || 'Erro ao realizar login');
       }
-    } catch (err) {
-      setError('Erro de conexão com o servidor');
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setError(apiError.message || 'Erro de conexão com o servidor');
     } finally {
       setLoading(false);
     }
@@ -61,6 +61,7 @@ export default function LoginPage() {
             <label>Email</label>
             <input
               type="email"
+              maxLength={120}
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -72,6 +73,7 @@ export default function LoginPage() {
             <label>Senha</label>
             <input
               type="password"
+              maxLength={128}
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -90,23 +92,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className={styles.loginDivider}>
-          <span>ou</span>
-        </div>
 
-        <Button
-          variant="social"
-          type="button"
-          onClick={() => signIn('google', { callbackUrl: '/learning' })}
-        >
-          <Image
-            src="https://authjs.dev/img/providers/google.svg"
-            alt="Google Logo"
-            width={20}
-            height={20}
-          />
-          Entrar com Google
-        </Button>
 
         <div className={styles.authFooter}>
           Não possui uma conta?{' '}

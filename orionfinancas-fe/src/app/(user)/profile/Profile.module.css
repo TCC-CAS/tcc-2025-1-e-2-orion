@@ -92,6 +92,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+    min-width: 0;    /* flex: permite o nome quebrar linha em vez de estourar */
+    flex: 1;
 }
 
 .userName {
@@ -102,6 +104,12 @@
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+    /* allow long names to wrap instead of being clipped */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+    line-height: 1.15;
 }
 
 .userActions {
@@ -742,6 +750,10 @@
 }
 
 @media (max-width: 768px) {
+    .profileContainer {
+        padding: 1rem 0.5rem;
+    }
+
     .statsGrid {
         grid-template-columns: 1fr;
     }
@@ -749,14 +761,26 @@
     .userHeader {
         flex-direction: column;
         text-align: center;
+        gap: 1rem;
     }
 
     .userActions {
         justify-content: center;
+        width: 100%;
+    }
+    
+    .actionBtn {
+        flex: 1;
+        text-align: center;
     }
 
     .userName {
-        font-size: 1.8rem;
+        font-size: 1.3rem;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        overflow: visible;
     }
 
     .toggleTabs {
@@ -765,7 +789,49 @@
 
     .tabBtn {
         flex: 1;
-        padding: 0.6rem 1rem;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .goalModalHeaderRow {
+        grid-template-columns: 1fr;
+    }
+
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .modalContent {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+}
+
+@media (max-width: 480px) {
+    .modalFooter {
+        flex-direction: column;
+    }
+
+    .missionItem {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .missionCheck {
+        align-self: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .goalHeaderRow {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .goalPercentage {
+        margin-right: 0;
     }
 }
 

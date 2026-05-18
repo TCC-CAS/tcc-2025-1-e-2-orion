@@ -51,11 +51,29 @@ const trailsController = {
                 });
             }
 
+            // Verificação de conteúdo PRO
+            if (filteredTrail.isPremium) {
+                const userId = req.user.id;
+                const subscription = await db.collection('subscriptions').findOne({ 
+                    userId: new ObjectId(userId), 
+                    status: 'ACTIVE' 
+                });
+
+                if (!subscription) {
+                    return res.status(403).json({
+                        message: "Esta é uma trilha exclusiva para membros PRO. Faça o upgrade para acessar!",
+                        status: "ERROR",
+                        isPremiumLocked: true
+                    });
+                }
+            }
+
             return res.json({
                 message: "Trilha obtida com sucesso",
                 status: "OK",
                 data: filteredTrail
             });
+
         } catch (error) {
             console.error("Erro ao obter trilha:", error);
             return res.status(500).json({ message: "Erro interno do servidor", status: "ERROR" });

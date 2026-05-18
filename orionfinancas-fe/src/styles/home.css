@@ -409,6 +409,17 @@
   .zigzag-gif {
     transform: translateY(-6px);
   }
+
+  /* Reset transforms so images don't float into text on single-column layout */
+  .zigzag-pig-gif,
+  .zigzag-coin-gif,
+  .zigzag-graphic-gif,
+  .zigzag-trophy-gif {
+    transform: none;
+    max-width: 200px;
+    margin: 0 auto;
+    display: block;
+  }
 }
 
 
@@ -1056,4 +1067,75 @@
     max-width: 320px;
   }
 
+}
+
+/* ================= MOBILE PEQUENO ================= */
+@media (max-width: 480px) {
+  .home-container {
+    padding: 3rem 1rem 2rem;
+    gap: 3rem;
+  }
+
+  .hero-content {
+    max-width: 100%;
+    padding: 0 0.5rem;
+  }
+
+  .hero-title {
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+    word-break: break-word;
+  }
+
+  .hero-description {
+    font-size: 1rem;
+  }
+
+  /* Section headings */
+  .orion-text h2,
+  .stats-intro h2,
+  .preview-text h2,
+  .zigzag-title,
+  .how-header h2,
+  .cta-box h2 {
+    font-size: 1.5rem;
+    word-break: break-word;
+  }
+
+  /* Orion intro: full width card on mobile */
+  .orion-card {
+    max-width: 100%;
+    padding: 1.5rem 1rem;
+  }
+
+  .orion-intro {
+    padding: 1.5rem 1rem;
+  }
+
+  /* Plans table: make sure scroll container doesn't leak */
+  .plans-table-scroll {
+    max-width: calc(100vw - 2rem);
+  }
+
+  /* Zigzag text */
+  .zigzag-subtitle {
+    font-size: 0.95rem;
+  }
+
+  /* How-it-works timeline */
+  .timeline-item {
+    grid-template-columns: 40px 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Buttons full-width on very small screens */
+  .zigzag-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .zigzag-actions .btn-primary,
+  .zigzag-actions .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
 }

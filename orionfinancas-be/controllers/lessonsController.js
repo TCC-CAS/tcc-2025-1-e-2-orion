@@ -29,7 +29,7 @@ const parseOptionalObjectId = (value, fieldName) => {
 const getLessonContext = async (db, lessonObjectId) => {
     const trail = await db.collection("content_trails").findOne(
         { "modulos.licoes._id": lessonObjectId },
-        { projection: { modulos: 1 } }
+        { projection: { modulos: 1, isPremium: 1 } }
     );
 
     if (!trail) return null;
@@ -43,12 +43,21 @@ const getLessonContext = async (db, lessonObjectId) => {
             return {
                 trailId: trail._id || null,
                 moduleId: modulo?._id || null,
-                moduleIsActive: modulo?.isActive !== false
+                moduleIsActive: modulo?.isActive !== false,
+                trailIsPremium: trail.isPremium === true
             };
         }
     }
 
     return null;
+};
+
+const userHasActiveSubscription = async (db, userId) => {
+    const subscription = await db.collection('subscriptions').findOne({
+        userId: new ObjectId(userId),
+        status: 'ACTIVE'
+    });
+    return !!subscription;
 };
 
 const lessonsController = {
@@ -93,6 +102,16 @@ const lessonsController = {
                     message: "Esta aula está desativada no momento",
                     status: "ERROR"
                 });
+            }
+
+            if (lessonContext.trailIsPremium) {
+                const isPremium = await userHasActiveSubscription(db, userId);
+                if (!isPremium) {
+                    return res.status(403).json({
+                        message: "Esta aula faz parte de uma trilha PRO. Assine para acessar.",
+                        status: "ERROR"
+                    });
+                }
             }
 
             if (moduleObjectId && moduleObjectId.toString() !== lessonContext.moduleId.toString()) {
@@ -143,8 +162,8 @@ const lessonsController = {
             let rewardAmount = isAlreadyCompleted ? { xp: 5, coins: 5 } : { xp: 50, coins: 15 };
 
             // Double rewards for PRO users
-            const subscription = await db.collection('subscriptions').findOne({ userId: new ObjectId(userId), status: 'ACTIVE' });
-            if (subscription) {
+            const isPremium = await userHasActiveSubscription(db, userId);
+            if (isPremium) {
                 rewardAmount = { xp: rewardAmount.xp * 2, coins: rewardAmount.coins * 2 };
             }
 
@@ -209,6 +228,10 @@ const lessonsController = {
                 comment: comment || "",
                 createdAt: new Date()
             });
+
+            // Trigger mission progress
+            await missionService.updateProgress(userId, "SUBMIT_REVIEW");
+
 
             return res.json({
                 message: "Avaliação enviada com sucesso",

@@ -6,23 +6,22 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const authMiddleware = { 
     verifyToken: (req, res, next) => {
         try {
+            let token;
             const authHeader = req.headers.authorization;
 
-            if (!authHeader) {
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            } else if (req.cookies && req.cookies.token) {
+                token = req.cookies.token;
+            }
+
+            if (!token) {
                 return res.status(401).json({
                     message: 'Token de acesso não fornecido',
                     status: 'ERROR'
                 });
             }
 
-            if (!authHeader.startsWith('Bearer ')) {
-                return res.status(401).json({
-                    message: 'Formato do token inválido. Use: Bearer <token>',
-                    status: "ERROR"
-                });
-            }
-
-            const token = authHeader.substring(7);
             const decoded = jwt.verify(token, SECRET_KEY);
 
             req.user = {
@@ -54,23 +53,22 @@ const authMiddleware = {
 
     verifyAdminToken: (req, res, next) => {
         try {
+            let token;
             const authHeader = req.headers.authorization;
 
-            if (!authHeader) {
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.substring(7);
+            } else if (req.cookies && req.cookies.adminToken) {
+                token = req.cookies.adminToken;
+            }
+
+            if (!token) {
                 return res.status(401).json({
                     message: 'Token de acesso não fornecido',
                     status: 'ERROR'
                 });
             }
 
-            if (!authHeader.startsWith('Bearer ')) {
-                return res.status(401).json({
-                    message: 'Formato do token inválido. Use: Bearer <token>',
-                    status: "ERROR"
-                });
-            }
-
-            const token = authHeader.substring(7);
             const decoded = jwt.verify(token, SECRET_KEY);
 
             if (decoded.role !== 'Admin') {

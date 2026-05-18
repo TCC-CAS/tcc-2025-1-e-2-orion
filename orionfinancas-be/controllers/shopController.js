@@ -32,8 +32,8 @@ const shopController = {
             const userId = new ObjectId(req.user.id);
             const { itemId } = req.body;
 
-            if (!itemId) {
-                return res.status(400).json({ message: 'ID do item obrigatório', status: 'ERROR' });
+            if (!itemId || !ObjectId.isValid(itemId)) {
+                return res.status(400).json({ message: 'ID do item inválido', status: 'ERROR' });
             }
 
             const item = await db.collection('shop_items').findOne({ _id: new ObjectId(itemId), isActive: true });
@@ -41,23 +41,6 @@ const shopController = {
                 return res.status(404).json({ message: 'Item não encontrado ou inativo', status: 'ERROR' });
             }
 
-            const user = await db.collection('users').findOne({ _id: userId });
-            if (!user) {
-                return res.status(404).json({ message: 'Usuário não encontrado', status: 'ERROR' });
-            }
-
-            const inventory = user.inventory || [];
-            const alreadyOwns = inventory.some(i => i.itemId && i.itemId.toString() === itemId.toString());
-            if (alreadyOwns) {
-                return res.status(400).json({ message: 'Você já possui este item', status: 'ERROR' });
-            }
-
-            const userCoins = user.wallet?.coins || 0;
-            if (userCoins < item.price) {
-                return res.status(400).json({ message: 'Moedas insuficientes', status: 'ERROR' });
-            }
-
-            const newCoins = userCoins - item.price;
             const inventoryEntry = {
                 itemId: item._id,
                 name: item.name,
@@ -66,19 +49,40 @@ const shopController = {
                 purchasedAt: new Date()
             };
 
-            await db.collection('users').updateOne(
-                { _id: userId },
-                { 
-                    $set: { "wallet.coins": newCoins },
+            // Operação atômica: só debita e adiciona ao inventário se o usuário
+            // (a) tem saldo suficiente e (b) ainda não possui o item
+            const result = await db.collection('users').findOneAndUpdate(
+                {
+                    _id: userId,
+                    "wallet.coins": { $gte: item.price },
+                    "inventory.itemId": { $ne: item._id }
+                },
+                {
+                    $inc: { "wallet.coins": -item.price },
                     $push: { inventory: inventoryEntry }
-                }
+                },
+                { returnDocument: 'after' }
             );
+
+            const updatedUser = result?.value || result;
+            if (!updatedUser) {
+                // Determinar a causa exata para mensagem útil
+                const user = await db.collection('users').findOne({ _id: userId });
+                if (!user) {
+                    return res.status(404).json({ message: 'Usuário não encontrado', status: 'ERROR' });
+                }
+                const owns = (user.inventory || []).some(i => i.itemId && i.itemId.toString() === item._id.toString());
+                if (owns) {
+                    return res.status(400).json({ message: 'Você já possui este item', status: 'ERROR' });
+                }
+                return res.status(400).json({ message: 'Moedas insuficientes', status: 'ERROR' });
+            }
 
             return res.json({
                 message: 'Compra realizada com sucesso!',
                 status: 'OK',
                 data: {
-                    newBalance: newCoins,
+                    newBalance: updatedUser.wallet?.coins ?? 0,
                     item: inventoryEntry
                 }
             });

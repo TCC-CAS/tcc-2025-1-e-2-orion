@@ -24,7 +24,6 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
         current: '',
         target: '',
         date: '',
-        description: '',
         urgency: 'medium',
     });
 
@@ -35,7 +34,6 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
                 current: (goal.current || 0).toString(),
                 target: (goal.target || 0).toString(),
                 date: goal.date || '',
-                description: goal.description || '',
                 urgency: goal.urgency || 'medium',
             });
         }
@@ -88,6 +86,7 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
                     <label>Título da Meta</label>
                     <input
                         type="text"
+                        maxLength={60}
                         className={styles.formInput}
                         placeholder="Ex: Viagem de Férias"
                         value={editForm.title}
@@ -101,10 +100,17 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
                         <input
                             type="number"
                             step="0.01"
+                            min="0"
+                            max="9999999999"
                             className={styles.formInput}
                             style={{ color: 'var(--primary-color)', fontWeight: 700 }}
                             value={editForm.current}
-                            onChange={(e) => setEditForm({ ...editForm, current: e.target.value })}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || Number(v) <= 9999999999) {
+                                    setEditForm({ ...editForm, current: v });
+                                }
+                            }}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -112,9 +118,16 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
                         <input
                             type="number"
                             step="0.01"
+                            min="0"
+                            max="9999999999"
                             className={styles.formInput}
                             value={editForm.target}
-                            onChange={(e) => setEditForm({ ...editForm, target: e.target.value })}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || Number(v) <= 9999999999) {
+                                    setEditForm({ ...editForm, target: v });
+                                }
+                            }}
                             required
                         />
                     </div>
@@ -135,16 +148,6 @@ const EditGoalModal: React.FC<EditGoalModalProps> = ({
                             {editForm.target ? `${Math.round(((parseFloat(editForm.current) || 0) / (parseFloat(editForm.target) || 1)) * 100)}% concluído` : 'Defina o alvo'}
                         </div>
                     </div>
-                </div>
-                <div className={styles.formGroup}>
-                    <label>Descrição (opcional)</label>
-                    <textarea
-                        className={styles.formInput}
-                        style={{ minHeight: '80px', resize: 'none' }}
-                        placeholder="Como você planeja alcançar isso?"
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    />
                 </div>
                 <div className={styles.modalFooter}>
                     <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancelar</button>

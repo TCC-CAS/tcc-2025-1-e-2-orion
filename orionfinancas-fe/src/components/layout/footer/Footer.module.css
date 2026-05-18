@@ -7,6 +7,8 @@
 
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 10;
 
   flex-shrink: 0;
   padding: 0.7rem 0;
@@ -36,6 +38,8 @@
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.85rem;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .footerLink:hover {

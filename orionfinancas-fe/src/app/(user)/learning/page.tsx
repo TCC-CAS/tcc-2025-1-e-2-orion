@@ -2,9 +2,14 @@
 
 import { Fragment, useState, useEffect } from "react";
 import styles from "./Learning.module.css";
-import { LEARNING_DOCUMENT, getModuleById, getQuizByLessonId, type Quiz, type QuizQuestion } from "./lessonsData";
+import type { QuizQuestion } from "./lessonsData";
 import { api } from "@/services/api";
 import Image from "next/image";
+import robotIdleGif from "@/assets/Robots_Idle-export.gif";
+import robotIdleEnemyGif from "@/assets/Robots_Idle-export-inimigo.gif";
+import robotActionPlayerGif from "@/assets/user_ani_1t.gif";
+import robotActionEnemyGif from "@/assets/enemie_anit.gif";
+import projectileImage from "@/assets/projetil_ani_1t1.png";
 
 // Dnd Kit & Icons Imports
 import {
@@ -25,7 +30,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Flame, Coins, Zap, Star, SendHorizontal, Heart, Lock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from "@/contexts/UserContext";
+import { GameTutorial } from "@/components/common/GameTutorial";
+import { NoLivesModal } from "@/components/common/NoLivesModal";
 
 // Modulo type will be dynamic
 
@@ -106,8 +114,33 @@ interface Trail {
   isPremium?: boolean;
 }
 
+const TUTORIAL_STEPS = [
+  {
+    title: "Bem-vindo à Jornada!",
+    content: "Eu sou seu guia robótico! Aqui você aprenderá como dominar suas finanças enquanto avança em uma trilha épica de conhecimento.",
+    placement: "center" as const
+  },
+  {
+    title: "Trilhas de Elite",
+    content: "Estas são as suas trilhas de aprendizado. Cada uma aborda um tema essencial. Escolha a sua e comece a progredir!",
+    targetId: "trails-grid",
+    placement: "top" as const
+  },
+  {
+    title: "O Caminho do Mestre",
+    content: "Ao entrar em uma trilha, cada etapa representa uma lição. Clique nelas para mergulhar no conteúdo e desbloquear os próximos desafios.",
+    placement: "center" as const
+  },
+  {
+    title: "Batalha de Conhecimento",
+    content: "No final de cada aula, você enfrentará um quiz em estilo de combate! Acerte as perguntas para derrotar o inimigo e ganhar XP e Moedas.",
+    placement: "center" as const
+  }
+];
+
 export default function Learning() {
   const { user, stats: userStats, subtractLife, refreshProfile } = useUser();
+  const [noLivesModalOpen, setNoLivesModalOpen] = useState(false);
   const currentLives = parseInt(userStats.lives.split('/')[0] || '5');
   const isUserPremium = user?.isPremium;
 
@@ -129,6 +162,22 @@ export default function Learning() {
   const [streakUpdated, setStreakUpdated] = useState(false);
   const [receivedRewards, setReceivedRewards] = useState<{ xp: number, coins: number } | null>(null);
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
+
+  // Scale dos offsets do trail (Duolingo-style) conforme largura da tela.
+  // Em desktop usamos 100% (zig-zag completo); em tablet 55%; em mobile 0
+  // (nós centralizados em coluna — o zigzag não cabe e fica feio).
+  const [trailScale, setTrailScale] = useState(1);
+  useEffect(() => {
+    const updateScale = () => {
+      const w = window.innerWidth;
+      if (w <= 600) setTrailScale(0);
+      else if (w <= 900) setTrailScale(0.55);
+      else setTrailScale(1);
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
   const [userQuizResults, setUserQuizResults] = useState<{ question: string, userAnswer: string, correctAnswer: string, isCorrect: boolean }[]>([]);
 
   const fetchData = async () => {
@@ -159,6 +208,7 @@ export default function Learning() {
   useEffect(() => {
     if (currentLives === 0 && lessonPhase === "questions") {
       handleBackToTrail();
+      setNoLivesModalOpen(true);
     }
   }, [currentLives, lessonPhase]);
 
@@ -172,6 +222,46 @@ export default function Learning() {
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+
+  // Estados da Batalha (Robôs)
+  const [playerAction, setPlayerAction] = useState<"idle" | "attack" | "hurt" | "dead">("idle");
+  const [enemyAction, setEnemyAction] = useState<"idle" | "attack" | "hurt" | "dead">("idle");
+  const [enemyHealth, setEnemyHealth] = useState(0);
+  const [projectile, setProjectile] = useState<{ active: boolean, from: 'player' | 'enemy' }>({ active: false, from: 'player' });
+
+  const triggerBattleAnimation = (isSuccess: boolean) => {
+    if (isSuccess) {
+      setPlayerAction("attack");
+      setTimeout(() => {
+        setProjectile({ active: true, from: 'player' });
+        setTimeout(() => {
+          setProjectile({ active: false, from: 'player' });
+          setEnemyAction("hurt");
+          setEnemyHealth((prev) => Math.max(0, prev - 1));
+          
+          setTimeout(() => {
+            setPlayerAction("idle");
+            setEnemyAction((prev) => (enemyHealth - 1 <= 0 ? "dead" : "idle"));
+          }, 800);
+        }, 300); // Tempo de voo
+      }, 150); // Atraso após o ataque
+    } else {
+      setEnemyAction("attack");
+      setTimeout(() => {
+        setProjectile({ active: true, from: 'enemy' });
+        setTimeout(() => {
+          setProjectile({ active: false, from: 'enemy' });
+          setPlayerAction("hurt");
+          subtractLife();
+          
+          setTimeout(() => {
+            setEnemyAction("idle");
+            setPlayerAction((prev) => (currentLives - 1 <= 0 ? "dead" : "idle"));
+          }, 800);
+        }, 300); // Tempo de voo
+      }, 150); // Atraso após o ataque
+    }
+  };
 
   // Sensores para o DND
   const sensors = useSensors(
@@ -265,6 +355,7 @@ export default function Learning() {
     if (!currentLesson) return;
     
     if (currentLives <= 0) {
+      setNoLivesModalOpen(true);
       return;
     }
 
@@ -280,6 +371,9 @@ export default function Learning() {
       setCurrentQuiz(quiz);
       setLessonPhase("questions");
       setCurrentQuestionIndex(0);
+      setEnemyHealth(quiz.questions?.length || 5);
+      setPlayerAction("idle");
+      setEnemyAction("idle");
     } catch (error) {
       console.error("Erro ao carregar quiz:", error);
       await completeLesson();
@@ -292,6 +386,33 @@ export default function Learning() {
     } else {
       completeQuiz();
     }
+  };
+
+  // Pular questão: penaliza com uma vida (como resposta errada) e avança
+  const skipQuestion = () => {
+    if (isChecking || currentLives <= 0) return;
+    setIsChecking(true);
+    setIsCorrect(false);
+
+    // Registra como questão pulada no resultado do quiz
+    setUserQuizResults(prev => {
+      if (prev.some(r => r.question === currentQuestion?.question)) return prev;
+      const correctAns = currentQuestion?.options?.[currentQuestion.correctOptionIndex!] || '';
+      return [...prev, {
+        question: currentQuestion?.question || '',
+        userAnswer: '(questão pulada)',
+        correctAnswer: correctAns,
+        isCorrect: false
+      }];
+    });
+
+    triggerBattleAnimation(false); // inimigo ataca → subtractLife é chamado internamente
+
+    setTimeout(() => {
+      setIsChecking(false);
+      setIsCorrect(null);
+      goToNextQuestion();
+    }, 1500);
   };
 
   const goToPreviousQuestion = () => {
@@ -378,9 +499,28 @@ export default function Learning() {
   const getConnectorStyle = (index: number) => {
     const allLessonsCount = activeTrail?.modulos.reduce((acc, m) => acc + (m.licoes?.length || 0), 0) || 0;
     if (index >= allLessonsCount - 1) return {};
-    
-    const currentOffset = TRAIL_OFFSETS[index % TRAIL_OFFSETS.length];
-    const nextOffset = TRAIL_OFFSETS[(index + 1) % TRAIL_OFFSETS.length];
+
+    // Mobile: linha vertical reta centralizada (sem zigzag).
+    if (trailScale === 0) {
+      return {
+        left: '50%',
+        width: 0,
+        height: '116px',
+        top: '42px',
+        borderLeft: '4px dashed rgba(255, 255, 255, 0.22)',
+        borderTop: 'none',
+        borderRight: 'none',
+        borderBottom: 'none',
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        transform: 'translateX(-2px)', // alinha o miolo da linha com o centro do nó
+        zIndex: 1,
+        pointerEvents: 'none' as const,
+      };
+    }
+
+    const currentOffset = TRAIL_OFFSETS[index % TRAIL_OFFSETS.length] * trailScale;
+    const nextOffset = TRAIL_OFFSETS[(index + 1) % TRAIL_OFFSETS.length] * trailScale;
     const width = Math.abs(nextOffset - currentOffset);
     const minOffset = Math.min(currentOffset, nextOffset);
     
@@ -422,17 +562,18 @@ export default function Learning() {
     const correct = currentQuestion?.correctOptionIndex === index;
     setIsCorrect(correct);
 
-    // Salvar resultado para feedback
-    setUserQuizResults(prev => [...prev, {
-      question: currentQuestion.question,
-      userAnswer: currentQuestion.options![index],
-      correctAnswer: currentQuestion.options![currentQuestion.correctOptionIndex!],
-      isCorrect: correct
-    }]);
+    // Salvar resultado para feedback apenas na primeira tentativa
+    setUserQuizResults(prev => {
+      if (prev.some(r => r.question === currentQuestion.question)) return prev;
+      return [...prev, {
+        question: currentQuestion.question,
+        userAnswer: currentQuestion.options![index],
+        correctAnswer: currentQuestion.options![currentQuestion.correctOptionIndex!],
+        isCorrect: correct
+      }];
+    });
 
-    if (!correct) {
-      subtractLife();
-    }
+    triggerBattleAnimation(correct);
 
     setTimeout(() => {
       setSelectedOptionIndex(null);
@@ -442,7 +583,7 @@ export default function Learning() {
       if (correct) {
         goToNextQuestion();
       }
-    }, 1200);
+    }, 1500);
   };
 
   const handleMatchingVerify = () => {
@@ -455,7 +596,18 @@ export default function Learning() {
     });
 
     setIsCorrect(isCorrectMatch);
-    if (!isCorrectMatch) subtractLife();
+    
+    setUserQuizResults(prev => {
+      if (prev.some(r => r.question === currentQuestion.question)) return prev;
+      return [...prev, {
+        question: currentQuestion.question,
+        userAnswer: "Ordem informada",
+        correctAnswer: "Ordem correta",
+        isCorrect: isCorrectMatch
+      }];
+    });
+    
+    triggerBattleAnimation(isCorrectMatch);
 
     setTimeout(() => {
       setIsChecking(false);
@@ -471,7 +623,18 @@ export default function Learning() {
     const isCorrectOrder = currentQuestion.options?.every((opt: string, i: number) => opt === dragItems[i]);
 
     setIsCorrect(isCorrectOrder);
-    if (!isCorrectOrder) subtractLife();
+
+    setUserQuizResults(prev => {
+      if (prev.some(r => r.question === currentQuestion.question)) return prev;
+      return [...prev, {
+        question: currentQuestion.question,
+        userAnswer: dragItems.join(", "),
+        correctAnswer: currentQuestion.options!.join(", "),
+        isCorrect: isCorrectOrder
+      }];
+    });
+
+    triggerBattleAnimation(isCorrectOrder);
 
     setTimeout(() => {
       setIsChecking(false);
@@ -500,6 +663,112 @@ export default function Learning() {
       })}
     </div>
   );
+
+  const renderBattleArena = () => {
+    return (
+      <div className={styles.battleArena}>
+        {/* Projectile */}
+        <AnimatePresence>
+          {projectile.active && (
+            <motion.div
+              initial={{ left: projectile.from === 'player' ? '25%' : '75%', opacity: 1 }}
+              animate={{ left: projectile.from === 'player' ? '75%' : '25%', opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "linear" }}
+              style={{ position: 'absolute', top: '40%', zIndex: 10, marginTop: '-20px' }}
+            >
+              <Image 
+                src={projectileImage}
+                alt="Projectile"
+                width={40} height={40}
+                style={{ 
+                  transform: projectile.from === 'enemy' ? 'scaleX(-1) scale(1.5)' : 'scale(1.5)', 
+                  imageRendering: 'pixelated',
+                  filter: projectile.from === 'enemy' ? 'hue-rotate(180deg)' : 'none'
+                }}
+                unoptimized
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Player (Robo Amigo) */}
+        <div className={styles.playerSide}>
+          <motion.div
+            initial={false}
+            animate={{
+              x: playerAction === "attack" ? 60 : 0,
+              opacity: playerAction === "dead" ? 0 : 1,
+              rotate: playerAction === "dead" ? -90 : 0,
+              scale: playerAction === "attack" ? 1.1 : 1
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className={`${styles.spriteContainer} ${playerAction === 'hurt' ? styles.hurtAnimation : ''}`}
+          >
+            <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center' }}>
+                <Image 
+                  src={playerAction === 'idle' ? robotIdleGif : robotActionPlayerGif} 
+                  alt="Player Sprite"
+                  fill
+                  style={{ 
+                    objectFit: 'contain',
+                    transform: 'scale(1.5)',
+                    imageRendering: 'pixelated',
+                    filter: 'drop-shadow(0 4px 10px rgba(0, 200, 150, 0.4))'
+                  }}
+                  unoptimized
+                />
+              </div>
+              <div className={styles.spriteLabel} style={{ position: 'absolute', bottom: -25, width: '100%', textAlign: 'center', color: '#fff', fontWeight: 800 }}>ALIADO</div>
+            </div>
+          </motion.div>
+          <div className={styles.healthBar}>
+            <div className={styles.healthFillPlayer} style={{ width: `${(currentLives / 5) * 100}%` }} />
+          </div>
+        </div>
+
+        {/* VS Indicator */}
+        <div className={styles.vsIndicator}>VS</div>
+
+        {/* Enemy (Robo Inimigo) */}
+        <div className={styles.enemySide}>
+          <motion.div
+            initial={false}
+            animate={{
+              x: enemyAction === "attack" ? -60 : 0,
+              opacity: enemyAction === "dead" ? 0 : 1,
+              rotate: enemyAction === "dead" ? 90 : 0,
+              scale: enemyAction === "attack" ? 1.1 : 1
+            }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className={`${styles.spriteContainer} ${enemyAction === 'hurt' ? styles.hurtAnimation : ''}`}
+          >
+            <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center' }}>
+                <Image 
+                  src={enemyAction === 'idle' ? robotIdleEnemyGif : robotActionEnemyGif} 
+                  alt="Enemy Sprite"
+                  fill
+                  style={{ 
+                    objectFit: 'contain', 
+                    transform: 'scale(1.5)', 
+                    imageRendering: 'pixelated',
+                    filter: 'drop-shadow(0 4px 10px rgba(255, 87, 34, 0.4))'
+                  }}
+                  unoptimized
+                />
+              </div>
+              <div className={styles.spriteLabel} style={{ position: 'absolute', bottom: -25, width: '100%', textAlign: 'center', color: '#fff', fontWeight: 800 }}>INIMIGO</div>
+            </div>
+          </motion.div>
+          <div className={styles.healthBar}>
+            <div className={styles.healthFillEnemy} style={{ width: `${(enemyHealth / (questions.length || 1)) * 100}%` }} />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderMatching = (q: QuizQuestion) => {
     const handleDragEnd = (event: DragEndEvent) => {
@@ -667,9 +936,10 @@ export default function Learning() {
                         ))}
                       </div>
                       <div className={styles.feedbackBox}>
-                        <input 
-                          type="text" 
-                          placeholder="Deixe um comentário (opcional)" 
+                        <input
+                          type="text"
+                          placeholder="Deixe um comentário (opcional)"
+                          maxLength={300}
                           className={styles.feedbackInput}
                           value={feedback}
                           onChange={(e) => setFeedback(e.target.value)}
@@ -719,9 +989,7 @@ export default function Learning() {
               </header>
 
               <section className={styles.studyCard} style={{ height: 'auto', background: 'rgba(15, 23, 42, 0.4)', borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div className={styles.animationBox}>
-                  <span style={{ zIndex: 1 }}>Arena de Batalha: Personagem Pronto</span>
-                </div>
+                {renderBattleArena()}
                 
                 {currentQuestion?.type === "multipleChoice" && renderMultipleChoice(currentQuestion)}
                 {currentQuestion?.type === "matching" && renderMatching(currentQuestion)}
@@ -733,8 +1001,8 @@ export default function Learning() {
                   voltar
                 </button>
                 <div style={{ width: '2rem' }} />
-                <button type="button" className={styles.studyBtnNext} style={{ opacity: 0.3, cursor: 'default' }}>
-                  pular questao
+                <button type="button" className={styles.studyBtnNext} onClick={skipQuestion} disabled={isChecking || currentLives <= 0}>
+                  pular questão
                 </button>
               </footer>
             </div>
@@ -780,6 +1048,42 @@ export default function Learning() {
     return (
       <div className={styles.modulesContainer} onClick={() => setSelectedNode(null)}>
         <section className={styles.activeModuleContainer}>
+          {/* Decorações laterais da trilha */}
+          <div className={styles.trailDecoLeft} aria-hidden>
+            <div className={styles.decoItem} style={{ top: '12%', left: '6%', animationDelay: '0s' }}>
+              <Coins size={28} color="#ffb800" opacity={0.35} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '32%', left: '2%', animationDelay: '0.8s' }}>
+              <Star size={22} color="#00f2a9" opacity={0.3} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '55%', left: '8%', animationDelay: '1.6s' }}>
+              <Flame size={24} color="#ff5722" opacity={0.28} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '75%', left: '3%', animationDelay: '2.4s' }}>
+              <Zap size={20} color="#00d2ff" opacity={0.25} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '88%', left: '10%', animationDelay: '1.2s' }}>
+              <Coins size={16} color="#ffb800" opacity={0.2} />
+            </div>
+          </div>
+          <div className={styles.trailDecoRight} aria-hidden>
+            <div className={styles.decoItem} style={{ top: '10%', right: '5%', animationDelay: '0.4s' }}>
+              <Heart size={26} color="#ef4444" opacity={0.3} fill="rgba(239,68,68,0.15)" />
+            </div>
+            <div className={styles.decoItem} style={{ top: '30%', right: '9%', animationDelay: '1.2s' }}>
+              <Zap size={24} color="#00d2ff" opacity={0.3} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '52%', right: '4%', animationDelay: '2s' }}>
+              <Star size={28} color="#ffb800" opacity={0.28} fill="rgba(255,184,0,0.1)" />
+            </div>
+            <div className={styles.decoItem} style={{ top: '72%', right: '8%', animationDelay: '0.6s' }}>
+              <Flame size={20} color="#ff5722" opacity={0.25} />
+            </div>
+            <div className={styles.decoItem} style={{ top: '87%', right: '3%', animationDelay: '1.8s' }}>
+              <Coins size={18} color="#00f2a9" opacity={0.22} />
+            </div>
+          </div>
+
           <header className={styles.trailHeader}>
             <button type="button" className={styles.backToModulesBtn} onClick={handleBackToTrails}>← Voltar para módulos</button>
             <h2 className={styles.trailTitle}>{activeTrail.title}</h2>
@@ -793,7 +1097,7 @@ export default function Learning() {
               );
 
               return allLessons.map((item, idx) => {
-                const nodeOffset = TRAIL_OFFSETS[idx % TRAIL_OFFSETS.length];
+                const nodeOffset = TRAIL_OFFSETS[idx % TRAIL_OFFSETS.length] * trailScale;
                 const isCompleted = progress.some(p => String(p.lessonId) === String(item.lesson._id || item.lesson.id) && p.status === "COMPLETED");
                 const isActive = activeModule?._id === item.modulo._id && activeLessonIndex === item.localIdx;
                 const isLastLesson = idx === allLessons.length - 1;
@@ -801,7 +1105,7 @@ export default function Learning() {
                 return (
                   <div key={item.lesson._id || idx} className={styles.trailStep}>
                     <div className={styles.nodeWrapper} style={{ transform: `translateX(${nodeOffset}px)` }}>
-                       {isActive && !selectedNode && (
+                       {isActive && !isCompleted && !selectedNode && (
                         <div className={`${styles.activeTooltip} ${styles.bounceAnimation}`}>
                           Começar<div className={styles.tooltipArrow} />
                         </div>
@@ -821,6 +1125,7 @@ export default function Learning() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (currentLives <= 0) {
+                                  setNoLivesModalOpen(true);
                                   return;
                                 }
                                 handleLessonClick(item.modulo, item.localIdx);
@@ -854,6 +1159,13 @@ export default function Learning() {
             })()}
           </div>
         </section>
+
+        {/* Modal sem vidas — position:fixed, aparece mesmo neste branch */}
+        <NoLivesModal
+          isOpen={noLivesModalOpen}
+          onClose={() => setNoLivesModalOpen(false)}
+          nextRegenAt={userStats.nextRegenAt}
+        />
       </div>
     );
   }
@@ -864,7 +1176,7 @@ export default function Learning() {
         <h2 className={styles.sectionTitle}>Módulos de Estudo</h2>
         <p className={styles.sectionSubtitle}>Continue de onde você parou</p>
       </header>
-      <div className={styles.modulesGrid}>
+      <div id="trails-grid" className={styles.modulesGrid}>
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={`skel-trail-${i}`} className={styles.modernModuleCard} style={{ animation: 'pulse 1.5s infinite', border: 'none', background: 'rgba(255,255,255,0.02)' }}>
@@ -962,6 +1274,18 @@ export default function Learning() {
           })
         )}
       </div>
+      <GameTutorial
+        steps={TUTORIAL_STEPS}
+        tutorialKey="learning_main"
+        onComplete={() => console.log('Tutorial concluído')}
+      />
+
+      {/* Modal de sem vidas — renderizado no topo do DOM via fixed */}
+      <NoLivesModal
+        isOpen={noLivesModalOpen}
+        onClose={() => setNoLivesModalOpen(false)}
+        nextRegenAt={userStats.nextRegenAt}
+      />
     </div>
   );
 }

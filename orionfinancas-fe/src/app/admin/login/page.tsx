@@ -21,7 +21,6 @@ export default function AdminLoginPage() {
       const res = await api.post('/auth/admin/login', { email, password });
 
       if (res.status === 'OK') {
-        localStorage.setItem('admin_token', res.token);
         router.push('/admin/dashboard');
       } else {
         setError(res.message || 'Credenciais inválidas ou acesso não autorizado.');

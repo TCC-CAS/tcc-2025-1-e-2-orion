@@ -5,6 +5,15 @@ import styles from './QuickTools.module.css';
 import { TrendingUp, PieChart, Target, X } from 'lucide-react';
 import Modal from '@/components/ui/Modal';
 
+// Limites para evitar overflow numérico e valores absurdos.
+// 9999999999 (~10 bilhões) cobre qualquer cenário realista de finanças pessoais.
+const MAX_MONEY = 9999999999;
+const clamp = (n: number, min: number, max: number) => {
+    if (Number.isNaN(n)) return min;
+    return Math.min(Math.max(n, min), max);
+};
+const clampMoney = (v: string) => clamp(Number(v), 0, MAX_MONEY);
+
 export default function QuickTools() {
     const [openModal, setOpenModal] = useState<string | null>(null);
 
@@ -67,19 +76,19 @@ function CompoundInterestModal({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 0' }}>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Investimento Inicial (R$)</label>
-                    <input type="number" value={initial} onChange={e => setInitial(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="9999999999" value={initial} onChange={e => setInitial(clampMoney(e.target.value))} style={fieldStyle} />
                 </div>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Aporte Mensal (R$)</label>
-                    <input type="number" value={monthly} onChange={e => setMonthly(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="9999999999" value={monthly} onChange={e => setMonthly(clampMoney(e.target.value))} style={fieldStyle} />
                 </div>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Taxa Anual (%)</label>
-                    <input type="number" value={rate} onChange={e => setRate(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="999" value={rate} onChange={e => setRate(clamp(Number(e.target.value), 0, 999))} style={fieldStyle} />
                 </div>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Anos</label>
-                    <input type="number" value={years} onChange={e => setYears(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="100" value={years} onChange={e => setYears(clamp(Number(e.target.value), 0, 100))} style={fieldStyle} />
                 </div>
                 <div style={resultStyle}>
                     <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>RESULTADO ESTIMADO</span>
@@ -101,7 +110,7 @@ function BudgetRuleModal({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 0' }}>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Sua Renda Mensal Líquida (R$)</label>
-                    <input type="number" value={income} onChange={e => setIncome(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="9999999999" value={income} onChange={e => setIncome(clampMoney(e.target.value))} style={fieldStyle} />
                 </div>
                 <div style={{ display: 'flex', height: '10px', borderRadius: '5px', overflow: 'hidden', margin: '0.5rem 0' }}>
                     <div style={{ width: '50%', background: '#2dd4bf' }}></div>
@@ -128,11 +137,11 @@ function GoalSimModal({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem 0' }}>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Qual seu Objetivo? (R$)</label>
-                    <input type="number" value={target} onChange={e => setTarget(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="0" max="9999999999" value={target} onChange={e => setTarget(clampMoney(e.target.value))} style={fieldStyle} />
                 </div>
                 <div style={inputStyle}>
                     <label style={labelStyle}>Em quantos meses?</label>
-                    <input type="number" value={months} onChange={e => setMonths(Number(e.target.value))} style={fieldStyle} />
+                    <input type="number" min="1" max="1200" value={months} onChange={e => setMonths(clamp(Number(e.target.value), 1, 1200))} style={fieldStyle} />
                 </div>
                 <div style={{ ...resultStyle, background: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
                     <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>POUPANÇA MENSAL NECESSÁRIA</span>

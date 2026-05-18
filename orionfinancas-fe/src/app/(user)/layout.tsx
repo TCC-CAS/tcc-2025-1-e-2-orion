@@ -2,7 +2,7 @@
 
 import { Header } from '@/components/layout/header/Header';
 import styles from './UserLayout.module.css';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
     Wallet,
@@ -14,12 +14,14 @@ import {
     Flame,
     Heart,
     Sparkles,
-    Coins
+    Coins,
+    Gem
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { useUser } from '@/contexts/UserContext';
 import { useEffect, useState, useRef } from 'react';
-
+import { api } from '@/services/api';
+import { SubscriptionModal } from '@/components/shop/SubscriptionModal';
 interface NavItem {
     href: string;
     label: string;
@@ -37,8 +39,10 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { user, stats: userStats, refreshProfile } = useUser();
+    const router = useRouter();
+    const { user, stats: userStats, refreshProfile, clearSession } = useUser();
     const [animateLives, setAnimateLives] = useState(false);
+    const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
     const lastLivesRef = useRef(userStats.lives);
 
     useEffect(() => {
@@ -58,9 +62,16 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         lastLivesRef.current = userStats.lives;
     }, [userStats.lives]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        window.location.href = '/';
+    const handleLogout = async (e: any) => {
+        e.preventDefault();
+        try {
+            await api.post('/auth/logout', {});
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            clearSession();
+        }
+        router.replace('/login');
     };
 
     const stats = [
@@ -73,7 +84,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     return (
         <AuthGuard>
             <div className={styles.userWrapper}>
-                <Header variant="logged" userData={user} />
+                <Header 
+                    variant="logged" 
+                    userData={user} 
+                    isPremium={user?.isPremium}
+                    onPremiumClick={() => setIsSubscriptionModalOpen(true)}
+                />
 
                 <div className={styles.appLayout}>
                     <aside className={styles.sidebarLeft}>
@@ -93,6 +109,20 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                             ))}
                         </nav>
 
+                        {user && !user.isPremium && (
+                            <div 
+                                className={styles.premiumCTA}
+                                onClick={() => setIsSubscriptionModalOpen(true)}
+                            >
+                                <div className={styles.premiumHeader}>
+                                    <Sparkles size={20} className={styles.premiumIcon} />
+                                    <span>Seja PRO</span>
+                                </div>
+                                <p className={styles.premiumText}>Desbloqueie trilhas exclusivas e vidas infinitas!</p>
+                                <button className={styles.premiumBtn}>Assinar Agora</button>
+                            </div>
+                        )}
+
                         <Link
                             href="/"
                             onClick={handleLogout}
@@ -103,7 +133,20 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                         </Link>
                     </aside>
 
-                    <main className={styles.mainContent}>{children}</main>
+                    <main className={styles.mainContent}>
+                        {children}
+                        <div style={{
+                            marginTop: '2rem',
+                            padding: '0.75rem 1rem',
+                            fontSize: '0.7rem',
+                            color: 'rgba(255,255,255,0.4)',
+                            textAlign: 'center',
+                            borderTop: '1px solid rgba(255,255,255,0.05)',
+                            lineHeight: 1.5
+                        }}>
+                            O conteúdo da plataforma Órion Finanças tem caráter exclusivamente educacional, baseado em fontes oficiais (ENEF, Banco Central do Brasil e CVM), e <strong>não constitui recomendação de investimento</strong>. Consulte um profissional credenciado pela CVM antes de tomar decisões financeiras.
+                        </div>
+                    </main>
 
                     <aside className={styles.sidebarRight}>
                         <div className={styles.gamificationPanel}>
@@ -124,6 +167,36 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                         </div>
                     </aside>
                 </div>
+
+                {/* Bottom navigation — visible on mobile only (CSS handles display) */}
+                <nav className={styles.mobileNav}>
+                    {NAV_ITEMS.map((item) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`${styles.mobileNavItem} ${
+                                pathname === item.href || pathname.startsWith(item.href + '/')
+                                    ? styles.active
+                                    : ''
+                            }`}
+                        >
+                            {item.icon}
+                            {item.label}
+                        </Link>
+                    ))}
+                    <button
+                        onClick={handleLogout}
+                        className={`${styles.mobileNavItem} ${styles.mobileNavLogout}`}
+                    >
+                        <LogOut size={20} />
+                        Sair
+                    </button>
+                </nav>
+
+                <SubscriptionModal
+                    isOpen={isSubscriptionModalOpen}
+                    onClose={() => setIsSubscriptionModalOpen(false)}
+                />
             </div>
         </AuthGuard>
     );

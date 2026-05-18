@@ -41,6 +41,25 @@ const parseOptionalObjectId = (value, fieldName) => {
     return new ObjectId(value);
 };
 
+const getQuizTrailIsPremium = async (db, quiz) => {
+    if (!quiz?.lessonId) return false;
+
+    const trail = await db.collection("content_trails").findOne(
+        { "modulos.licoes._id": new ObjectId(quiz.lessonId) },
+        { projection: { isPremium: 1 } }
+    );
+
+    return trail?.isPremium === true;
+};
+
+const userHasActiveSubscription = async (db, userId) => {
+    const subscription = await db.collection('subscriptions').findOne({
+        userId: new ObjectId(userId),
+        status: 'ACTIVE'
+    });
+    return !!subscription;
+};
+
 const quizzesController = {
     // Admin: List modules + quizzes for management
     getAdminCatalog: async (req, res) => {
@@ -306,7 +325,18 @@ const quizzesController = {
                 });
             }
 
-            const totalQuestions = quiz.questions.length;
+            const trailIsPremium = await getQuizTrailIsPremium(db, quiz);
+            if (trailIsPremium) {
+                const isPremium = await userHasActiveSubscription(db, userId);
+                if (!isPremium) {
+                    return res.status(403).json({
+                        message: "Este quiz faz parte de uma trilha PRO. Assine para acessar.",
+                        status: "ERROR"
+                    });
+                }
+            }
+
+            const totalQuestions = (quiz.questions || []).length;
             const normalizedScore = scoreValue > totalQuestions
                 ? (scoreValue / 100) * totalQuestions
                 : scoreValue;
@@ -357,8 +387,8 @@ const quizzesController = {
                     : { xp: xpPerQ * totalQuestions, coins: coinsPerQ * totalQuestions };
                 
                 // Double rewards for PRO users
-                const subscription = await db.collection('subscriptions').findOne({ userId: new ObjectId(userId), status: 'ACTIVE' });
-                if (subscription) {
+                const isPremium = await userHasActiveSubscription(db, userId);
+                if (isPremium) {
                     rewardAmount = { xp: rewardAmount.xp * 2, coins: rewardAmount.coins * 2 };
                 }
 

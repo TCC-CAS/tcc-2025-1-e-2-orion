@@ -4,6 +4,6 @@ const subscriptionsController = require("../controllers/subscriptionsController.
 
 const router = express.Router();
 
-router.get("/admin", authMiddleware.verifyToken, subscriptionsController.getAdminSubscriptions);
+router.get("/admin", authMiddleware.verifyAdminToken, subscriptionsController.getAdminSubscriptions);
 
 module.exports = router;

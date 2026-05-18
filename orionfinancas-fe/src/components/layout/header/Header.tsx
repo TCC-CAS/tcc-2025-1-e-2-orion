@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Sparkles } from 'lucide-react';
 import styles from './Header.module.css';
 import { useState, useRef, useEffect } from "react";
 import { api } from '@/services/api';
@@ -11,13 +11,23 @@ interface HeaderProps {
   homeHref?: string;
   profileHref?: string;
   hideNotifications?: boolean;
+  isPremium?: boolean;
+  onPremiumClick?: () => void;
   userData?: {
     name?: string;
     avatarUrl?: string | null;
   } | null;
 }
 
-export function Header({ variant = 'public', homeHref, profileHref, hideNotifications, userData }: HeaderProps) {
+export function Header({ 
+  variant = 'public', 
+  homeHref, 
+  profileHref, 
+  hideNotifications, 
+  userData,
+  isPremium,
+  onPremiumClick
+}: HeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
 
@@ -31,7 +41,20 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
         .then(res => {
           if (res.status === 'OK') setNotifications(res.data || []);
         })
-        .catch(err => console.error('Erro ao buscar notificações:', err));
+        .catch((err: unknown) => {
+          const apiError = err as { status?: string | number; message?: string };
+          const statusCode = Number(apiError?.status);
+          const message = (apiError?.message || '').toLowerCase();
+          const isUnauthenticated =
+            statusCode === 401 ||
+            message.includes('token de acesso não fornecido') ||
+            message.includes('token inválido') ||
+            message.includes('unauthorized');
+
+          if (!isUnauthenticated) {
+            console.error('Erro ao buscar notificações:', err);
+          }
+        });
     }
   }, [variant, hideNotifications]);
 
@@ -96,6 +119,15 @@ export function Header({ variant = 'public', homeHref, profileHref, hideNotifica
             </nav>
           ) : (
             <div className={styles.actions}>
+              {!isPremium && (
+                <button 
+                  className={styles.premiumHeaderBtn}
+                  onClick={onPremiumClick}
+                >
+                  <Sparkles size={16} />
+                  <span>Seja PRO</span>
+                </button>
+              )}
               {!hideNotifications && (
                 <div className={styles.dropdownWrapper} ref={notificationsRef}>
                   <button

@@ -58,14 +58,22 @@ export default function GoalsPage() {
                     current: g.currentAmount || 0,
                     target: g.targetAmount,
                     urgency: colorToUrgency(g.urgencyColor),
-                    description: g.description || '',
                     date: g.targetDate ? new Date(g.targetDate).toISOString().split('T')[0] : ''
                 }));
                 setGoals(mapped);
             } else {
                 setGoals([]);
             }
-        } catch (err) {
+        } catch (err: unknown) {
+            const apiError = err as { message?: string };
+            const message = (apiError?.message || '').toLowerCase();
+            const noGoalsFound = message.includes('metas não encontradas');
+
+            if (noGoalsFound) {
+                setGoals([]);
+                return;
+            }
+
             console.error('Erro ao carregar metas:', err);
         } finally {
             setLoading(false);
@@ -85,7 +93,6 @@ export default function GoalsPage() {
             current: '0',
             target: '',
             date: '',
-            description: '',
             urgency: 'medium',
         });
         setIsModalOpen(true);
@@ -111,7 +118,6 @@ export default function GoalsPage() {
                     currentAmount: currentVal,
                     targetDate: data.date,
                     urgencyColor: urgencyToColor(data.urgency),
-                    description: data.description
                 };
                 const res = await api.put('/goals/update-goal', payload);
                 if (res.status === 'OK') {
@@ -125,7 +131,6 @@ export default function GoalsPage() {
                     currentAmount: currentVal,
                     targetDate: data.date,
                     urgencyColor: urgencyToColor(data.urgency),
-                    description: data.description
                 };
                 const res = await api.post('/goals/create-goal', payload);
                 if (res.status === 'OK') {

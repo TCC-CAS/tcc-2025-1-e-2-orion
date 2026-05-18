@@ -28,6 +28,28 @@ export default function ShopPage() {
             .finally(() => setIsLoading(false));
     }, []);
 
+    // Verifica se voltou do AbacatePay com sucesso
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('success') === 'true') {
+                const plan = params.get('plan') || 'monthly';
+                const checkoutToken = params.get('checkoutToken') || '';
+                api.post('/account/set-premium', { plan, checkoutToken }).then((res) => {
+                    if (res.status === 'OK') {
+                        toast.success('Pagamento confirmado! Assinatura ativada.', { 
+                            icon: '🎉',
+                            style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' } 
+                        });
+                        refreshProfile();
+                        // Limpa a URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }).catch(console.error);
+            }
+        }
+    }, [refreshProfile]);
+
     const handleBuyClick = useCallback((item: any) => {
         setSelectedItem(item);
     }, []);

@@ -2,12 +2,15 @@ const { MongoClient }  = require('mongodb');
 
 let db;
 
+let clientInstance;
+
 const connectDB = async () => {
     try {
         const mongoURI = process.env.MONGODB_URI
         const client = new MongoClient(mongoURI);
 
         await client.connect();
+        clientInstance = client;
         db = client.db('orion_financas_db');
 
         return db;
@@ -25,4 +28,12 @@ const getDB = () => {
     return db;
 }
 
-module.exports = { connectDB, getDB };
+const closeDB = async () => {
+    if (clientInstance) {
+        await clientInstance.close();
+        clientInstance = null;
+        db = null;
+    }
+}
+
+module.exports = { connectDB, getDB, closeDB };

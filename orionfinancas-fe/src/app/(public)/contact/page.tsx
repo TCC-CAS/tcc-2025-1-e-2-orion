@@ -52,34 +52,28 @@ export default function ContactPage() {
             <p><strong>Email:</strong> suporte@orionfinancas.com.br</p>
             <p><strong>Horário:</strong> Seg - Sex, 09h às 18h</p>
           </div>
-          <div className={styles.infoCard}>
-            <h3>Redes Sociais</h3>
-            <p>Siga-nos para dicas diárias de educação financeira.</p>
-            <div className={styles.socialLinks}>
-              <span>Instagram</span>
-              <span>LinkedIn</span>
-            </div>
-          </div>
         </div>
 
         <form className={styles.contactForm} onSubmit={handleSubmit}>
           <FormField label="Nome Completo">
-            <input 
-              type="text" 
-              placeholder="Como podemos te chamar?" 
+            <input
+              type="text"
+              maxLength={60}
+              placeholder="Como podemos te chamar?"
               value={formData.name || ""}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required 
+              required
             />
           </FormField>
 
           <FormField label="E-mail">
-            <input 
-              type="email" 
-              placeholder="seu@email.com" 
+            <input
+              type="email"
+              maxLength={120}
+              placeholder="seu@email.com"
               value={formData.email || ""}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              required 
+              required
             />
           </FormField>
 
@@ -99,12 +93,13 @@ export default function ContactPage() {
 
 
           <FormField label="Mensagem">
-            <textarea 
-              rows={5} 
-              placeholder="Escreva sua mensagem aqui..." 
+            <textarea
+              rows={5}
+              maxLength={2000}
+              placeholder="Escreva sua mensagem aqui..."
               value={formData.message || ""}
               onChange={(e) => setFormData({...formData, message: e.target.value})}
-              required 
+              required
             />
           </FormField>
           <Button type="submit" variant="primary" disabled={status === "loading"}>

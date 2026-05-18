@@ -19,18 +19,11 @@ const goalsController = {
 
             const allGoals = await db.collection(COLLECTIONNAME).find( { userId: new ObjectId(userId) } ).toArray()
 
-            if (allGoals.length != 0) {
-                return res.json({
-                    message: "Metas encontradas",
-                    status: "OK",
-                    allGoals
-                });
-            } else {
-                return res.status(404).json({
-                    message: "Metas não encontradas",
-                    status: "ERROR"
-                })
-            }
+            return res.json({
+                message: allGoals.length > 0 ? "Metas encontradas" : "Nenhuma meta encontrada",
+                status: "OK",
+                data: allGoals
+            });
 
         } catch (error) {
             console.error(error);
@@ -132,6 +125,13 @@ const goalsController = {
             if (!updates || Object.keys(updates).length === 0) {
                 return res.status(400).json({
                     message: 'Nenhum dado fornecido para atualização',
+                    status: 'ERROR'
+                });
+            }
+
+            if (!goalId || !ObjectId.isValid(goalId)) {
+                return res.status(400).json({
+                    message: 'ID da meta inválido',
                     status: 'ERROR'
                 });
             }
@@ -250,9 +250,9 @@ const goalsController = {
             const goalId = req.body._id;
             const userId = req.user.id;
     
-            if (!goalId) {
+            if (!goalId || !ObjectId.isValid(goalId)) {
                 return res.status(400).json({
-                    message: 'Não foram encontrados nenhuma meta para deletar',
+                    message: 'ID da meta inválido',
                     status: 'ERROR'
                 });
             }

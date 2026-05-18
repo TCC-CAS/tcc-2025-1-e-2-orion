@@ -1,8 +1,12 @@
     .settingsContainer {
-        max-width: 900px;
+        width: 100%;
+        max-width: 1000px;
         margin: 0 auto;
-        padding: 1rem 1rem;
+        padding: 1.5rem 1rem;
     }
+
+
+
 
     .pageTitle {
         font-size: 2rem;
@@ -12,9 +16,10 @@
 
     .settingsLayout {
         display: grid;
-        grid-template-columns: 240px 1fr;
-        gap: 3rem;
+        grid-template-columns: 220px 1fr;
+        gap: 2rem;
     }
+
 
     .settingsNav {
         display: flex;
@@ -85,6 +90,8 @@
 
     .field input,
     .field textarea {
+        width: 100%;
+        max-width: 600px;
         padding: 0.8rem 1rem;
         background: var(--dark-bg);
         border: 1px solid var(--border-color);
@@ -93,6 +100,7 @@
         font-family: inherit;
         transition: border-color 0.2s;
     }
+
 
     .field input:focus,
     .field textarea:focus {
@@ -199,11 +207,7 @@
         cursor: pointer;
     }
 
-    @media (max-width: 768px) {
-        .settingsLayout {
-            grid-template-columns: 1fr;
-        }
-    }
+
 
     .headerActions {
         display: flex;
@@ -439,3 +443,80 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(20, 184, 166, 0.5);
     }
+
+/* ==========================================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .settingsContainer {
+        padding: 1rem 0.5rem;
+    }
+
+    .settingsLayout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .settingsNav {
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .navItem {
+        white-space: nowrap;
+        padding: 0.6rem 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    .formFooter {
+        flex-direction: column-reverse;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .saveBtn {
+        align-self: stretch;
+        text-align: center;
+    }
+    
+    .btnDeleteInline {
+        justify-content: center;
+    }
+
+    .planHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .planActions {
+        flex-direction: column;
+    }
+    
+    .secondaryBtn, .dangerBtn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .modalContent {
+        padding: 2rem 1.5rem;
+        margin: 1rem;
+        max-width: calc(100% - 2rem);
+    }
+}
+
+@media (max-width: 480px) {
+    .modalFooter {
+        flex-direction: column;
+    }
+    
+    .deleteConfirmBtn, .modalFooter .secondaryBtn {
+        width: 100%;
+    }
+}

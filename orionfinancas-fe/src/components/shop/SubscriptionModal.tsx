@@ -8,85 +8,49 @@ import toast from 'react-hot-toast';
 import { api } from '@/services/api';
 import { useUser } from '@/contexts/UserContext';
 
+
+
 interface SubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Step = 'plan' | 'payment' | 'card' | 'pix';
-
 export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
-  const { refreshProfile } = useUser();
-  const [step, setStep] = useState<Step>('plan');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual' | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'pix' | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const [cardData, setCardData] = useState({
-    cpf: '',
-    cardNumber: '',
-    cardholderName: '',
-    cvv: '',
-    expiry: '',
-  });
 
-  const [pixData, setPixData] = useState({
-    cpf: '',
-    email: '',
-  });
 
-  const handleBypassPremium = async () => {
+  const handleNextFromPlan = async () => {
+    if (!selectedPlan) return;
+    
+    setIsProcessing(true);
     try {
-        const res = await api.post('/account/set-premium', {});
-        if (res.status === 'OK') {
-            toast.success('Modo Premium ativado via Bypass!', { 
-                icon: '🔑',
-                style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #eab308' } 
-            });
-            await refreshProfile();
+        const res = await api.post('/account/abacatepay-checkout', { plan: selectedPlan });
+        if (res.status === 'OK' && res.url) {
+            toast.success('Redirecionando para o AbacatePay...', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954' } });
+            window.location.href = res.url;
+            setIsProcessing(false);
             onClose();
+        } else {
+            toast.error(res.message || 'Erro ao gerar pagamento');
+            setIsProcessing(false);
         }
     } catch (err) {
-        toast.error('Erro ao ativar Premium');
+        toast.error('Erro de conexão ao gerar pagamento');
+        setIsProcessing(false);
     }
   };
-
-  const handleNextFromPlan = useCallback(() => {
-    if (selectedPlan) setStep('payment');
-  }, [selectedPlan]);
-
-  const handleNextFromPayment = useCallback(() => {
-    if (paymentMethod === 'card') setStep('card');
-    else if (paymentMethod === 'pix') setStep('pix');
-  }, [paymentMethod]);
-
-  const handleSubscribe = useCallback(() => {
-    console.log({ selectedPlan, paymentMethod, cardData, pixData });
-    toast.success('Assinatura realizada com sucesso! (simulado)', { style: { background: '#1c223a', color: '#fff', border: '1px solid #333954', borderLeft: '3px solid #00f2a9' } });
-    onClose();
-    setTimeout(() => {
-        setStep('plan');
-        setSelectedPlan(null);
-        setPaymentMethod(null);
-    }, 300);
-  }, [selectedPlan, paymentMethod, cardData, pixData, onClose]);
-
-  const handleBack = useCallback(() => {
-    if (step === 'payment') setStep('plan');
-    else if (step === 'card' || step === 'pix') setStep('payment');
-  }, [step]);
 
   return (
     <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={step === 'plan' ? 'Escolha seu plano' : step === 'payment' ? 'Forma de pagamento' : step === 'card' ? 'Pagamento via cartão' : 'Pagamento via Pix'}
+        title="Escolha seu plano"
         maxWidth="600px"
     >
         <div className={styles.modalBody}>
-            {/* Step 1: Escolha de plano */}
-            {step === 'plan' && (
-            <>
-                <div className={styles.planGrid}>
+            <div className={styles.planGrid}>
                 <button
                     className={`${styles.planCard} ${selectedPlan === 'monthly' ? styles.planSelected : ''}`}
                     onClick={() => setSelectedPlan('monthly')}
@@ -113,154 +77,11 @@ export function SubscriptionModal({ isOpen, onClose }: SubscriptionModalProps) {
                     <button
                         className={styles.primaryBtn}
                         onClick={handleNextFromPlan}
-                        disabled={!selectedPlan}
+                        disabled={!selectedPlan || isProcessing}
                     >
-                        Próximos passos
-                    </button>
-                    
-                    <button 
-                        type="button" 
-                        onClick={handleBypassPremium} 
-                        style={{ 
-                            background: 'rgba(234, 179, 8, 0.1)', 
-                            color: '#eab308', 
-                            border: '1px dashed #eab308', 
-                            padding: '10px', 
-                            borderRadius: '8px', 
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        ✨ Ativar Premium (Bypass Teste) ✨
+                        {isProcessing ? 'Gerando link seguro...' : 'Ir para Pagamento'}
                     </button>
                 </div>
-            </>
-            )}
-
-            {/* Step 2: Forma de pagamento */}
-            {step === 'payment' && (
-            <>
-                <div className={styles.paymentOptions}>
-                <button
-                    className={`${styles.paymentOption} ${paymentMethod === 'card' ? styles.optionSelected : ''}`}
-                    onClick={() => setPaymentMethod('card')}
-                >
-                    Cartão
-                </button>
-                <button
-                    className={`${styles.paymentOption} ${paymentMethod === 'pix' ? styles.optionSelected : ''}`}
-                    onClick={() => setPaymentMethod('pix')}
-                >
-                    Pix
-                </button>
-                </div>
-                <div className={styles.footerActions}>
-                <button className={styles.secondaryBtn} onClick={handleBack}>
-                    Voltar
-                </button>
-                <button
-                    className={styles.primaryBtn}
-                    onClick={handleNextFromPayment}
-                    disabled={!paymentMethod}
-                >
-                    Próximos passos
-                </button>
-                </div>
-            </>
-            )}
-
-            {/* Step 3a: Pagamento via cartão */}
-            {step === 'card' && (
-            <>
-                <div className={styles.formGrid}>
-                <FormField label="CPF">
-                    <input
-                    type="text"
-                    placeholder="000.000.000-00"
-                    value={cardData.cpf}
-                    onChange={(e) => setCardData({ ...cardData, cpf: e.target.value })}
-                    />
-                </FormField>
-                <FormField label="Número do cartão">
-                    <input
-                    type="text"
-                    placeholder="0000 0000 0000 0000"
-                    value={cardData.cardNumber}
-                    onChange={(e) => setCardData({ ...cardData, cardNumber: e.target.value })}
-                    />
-                </FormField>
-                <FormField label="Nome do titular">
-                    <input
-                    type="text"
-                    placeholder="Nome como no cartão"
-                    value={cardData.cardholderName}
-                    onChange={(e) => setCardData({ ...cardData, cardholderName: e.target.value })}
-                    />
-                </FormField>
-                <div className={styles.row}>
-                    <FormField label="Validade">
-                    <input
-                        type="text"
-                        placeholder="MM/AA"
-                        value={cardData.expiry}
-                        onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
-                    />
-                    </FormField>
-                    <FormField label="CVV">
-                    <input
-                        type="text"
-                        placeholder="123"
-                        value={cardData.cvv}
-                        onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-                    />
-                    </FormField>
-                </div>
-                </div>
-                <div className={styles.footerActions}>
-                <button className={styles.secondaryBtn} onClick={handleBack}>
-                    Voltar
-                </button>
-                <button className={styles.primaryBtn} onClick={handleSubscribe}>
-                    Assinar
-                </button>
-                </div>
-            </>
-            )}
-
-            {/* Step 3b: Pagamento via Pix */}
-            {step === 'pix' && (
-            <>
-                <div className={styles.formStack}>
-                <FormField label="CPF">
-                    <input
-                    type="text"
-                    placeholder="000.000.000-00"
-                    value={pixData.cpf}
-                    onChange={(e) => setPixData({ ...pixData, cpf: e.target.value })}
-                    />
-                </FormField>
-                <FormField label="Email">
-                    <input
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={pixData.email}
-                    onChange={(e) => setPixData({ ...pixData, email: e.target.value })}
-                    />
-                </FormField>
-                <div className={styles.pixPlaceholder}>
-                    <span>QR Code ou chave Pix será exibido aqui após preencher os dados.</span>
-                </div>
-                </div>
-                <div className={styles.footerActions}>
-                <button className={styles.secondaryBtn} onClick={handleBack}>
-                    Voltar
-                </button>
-                <button className={styles.primaryBtn} onClick={handleSubscribe}>
-                    Assinar
-                </button>
-                </div>
-            </>
-            )}
         </div>
     </Modal>
   );

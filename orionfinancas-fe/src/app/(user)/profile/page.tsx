@@ -85,12 +85,20 @@ export default function ProfilePage() {
                     current: g.currentAmount || 0,
                     target: g.targetAmount,
                     urgency: colorToUrgency(g.urgencyColor),
-                    description: g.description || '',
                     date: g.targetDate ? new Date(g.targetDate).toISOString().split('T')[0] : ''
                 }));
                 setGoals(mapped);
             }
-        } catch (error) {
+        } catch (error: unknown) {
+            const apiError = error as { message?: string };
+            const message = (apiError?.message || '').toLowerCase();
+            const noGoalsFound = message.includes('metas não encontradas');
+
+            if (noGoalsFound) {
+                setGoals([]);
+                return;
+            }
+
             console.error('Erro ao buscar metas:', error);
         }
     }, []);
@@ -221,7 +229,6 @@ export default function ProfilePage() {
                 currentAmount: currentVal,
                 targetDate: updatedGoal.date,
                 urgencyColor: urgencyToColor(updatedGoal.urgency),
-                description: updatedGoal.description
             };
             const res = await api.put('/goals/update-goal', payload);
             if (res.status === 'OK') {

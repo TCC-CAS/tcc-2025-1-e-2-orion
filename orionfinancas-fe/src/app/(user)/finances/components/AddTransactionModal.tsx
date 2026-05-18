@@ -100,6 +100,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </div>
                         <input
                             required
+                            maxLength={80}
                             className={styles.formInput}
                             placeholder="Ex: Aluguel, Salário, Mercado..."
                             value={formData.title}
@@ -117,10 +118,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                                 required
                                 type="number"
                                 step="0.01"
+                                min="0"
+                                max="9999999999"
                                 className={styles.formInput}
                                 placeholder="0,00"
                                 value={formData.amount}
-                                onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                                onChange={e => {
+                                    const v = e.target.value;
+                                    if (v === '' || Number(v) <= 9999999999) {
+                                        setFormData({ ...formData, amount: v });
+                                    }
+                                }}
                             />
                         </div>
                     </div>
@@ -128,6 +136,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <label>Categoria</label>
                         <input
                             required
+                            maxLength={40}
                             className={styles.formInput}
                             placeholder="Ex: Lazer"
                             value={formData.category}

@@ -19,25 +19,24 @@ const AdminHistoryModal = dynamic(() => import('./components/AdminHistoryModal')
 
 type DashboardView = 'resumo' | 'historico' | 'config';
 
-const historyData = [
-  { month: 'Set', activeUsers: 860, newSignups: 74, reactivated: 18 },
-  { month: 'Out', activeUsers: 910, newSignups: 82, reactivated: 22 },
-  { month: 'Nov', activeUsers: 980, newSignups: 95, reactivated: 19 },
-  { month: 'Dez', activeUsers: 1050, newSignups: 102, reactivated: 28 },
-  { month: 'Jan', activeUsers: 1160, newSignups: 124, reactivated: 33 },
-  { month: 'Fev', activeUsers: 1284, newSignups: 96, reactivated: 30 }
-];
-
-const statusDistribution = [
-  { name: 'Ativos', value: 1284, color: '#2dd4bf' },
-  { name: 'Pendentes', value: 96, color: '#f59e0b' },
-  { name: 'Inativos', value: 214, color: '#ef4444' }
-];
 
 export default function AdminDashboardPage() {
   const [view, setView] = useState<DashboardView>('resumo');
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  const [stats, setStats] = useState({ totalUsers: 0, activeUsers: 0, totalQuizzes: 0, totalSubscriptions: 0 });
+  const [stats, setStats] = useState({ 
+    totalUsers: 0, 
+    activeUsers: 0, 
+    totalQuizzes: 0, 
+    totalSubscriptions: 0, 
+    historyData: [
+      { month: '', activeUsers: 0, newSignups: 0, reactivated: 0 }
+    ], 
+    statusDistribution: [
+      { name: 'Ativos', value: 0, color: '#2dd4bf' },
+      { name: 'Pendentes', value: 0, color: '#f59e0b' },
+      { name: 'Inativos', value: 0, color: '#ef4444' }
+    ] 
+  });
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,7 +50,14 @@ export default function AdminDashboardPage() {
       api.get('/account/admin/activity'),
       api.get('/account/admin/settings')
     ]).then(([statsRes, activityRes, settingsRes]) => {
-      if (statsRes.status === 'OK') setStats(statsRes.data);
+      if (statsRes.status === 'OK') {
+        setStats(prev => ({ 
+            ...prev, 
+            ...statsRes.data,
+            historyData: statsRes.data.historyData || prev.historyData,
+            statusDistribution: statsRes.data.statusDistribution || prev.statusDistribution
+        }));
+      }
       if (activityRes.status === 'OK') setActivities(activityRes.data);
       if (settingsRes.status === 'OK') setSettings(settingsRes.data);
     })
@@ -123,7 +129,7 @@ export default function AdminDashboardPage() {
             {view === 'resumo' ? (
               <div className={styles.resumoView}>
                 <div className={styles.chartContainer}>
-                    <AdminPieChart data={statusDistribution} activeUsers={activeUsers} />
+                    <AdminPieChart data={stats.statusDistribution || []} activeUsers={activeUsers} />
                 </div>
 
                 <div className={styles.resumoContext}>
@@ -141,7 +147,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             ) : view === 'historico' ? (
-                <AdminLineChart data={historyData} />
+                <AdminLineChart data={stats.historyData || []} />
             ) : (
                 <div className={styles.configView}>
                     <form className={styles.settingsForm} onSubmit={handleSaveSettings}>

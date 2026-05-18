@@ -95,7 +95,7 @@ export default function HomePage() {
             <p>
               Nosso objetivo é ajudar você a <strong>organizar gastos</strong>,
               entender <strong>planejamento</strong>, aprender{" "}
-              <strong>investimentos</strong> e criar hábitos financeiros que
+              e criar hábitos financeiros que
               sustentam um futuro mais livre.
             </p>
 
@@ -186,19 +186,7 @@ export default function HomePage() {
                       <td>Sim</td>
                     </tr>
                     <tr>
-                      <td>Sem anúncios</td>
-                      <td>Não</td>
-                      <td>Sim</td>
-                      <td>Sim</td>
-                    </tr>
-                    <tr>
-                      <td>Metas personalizadas e acompanhamento detalhado</td>
-                      <td>Não</td>
-                      <td>Sim</td>
-                      <td>Sim</td>
-                    </tr>
-                    <tr>
-                      <td>Cursos exclusivos de investimento</td>
+                      <td>Cursos exclusivos de Educação Financeira</td>
                       <td>Não</td>
                       <td>Sim</td>
                       <td>Sim</td>
@@ -206,7 +194,7 @@ export default function HomePage() {
                     <tr>
                       <td>Vidas ilimitadas</td>
                       <td>Não</td>
-                      <td>Não</td>
+                      <td>Sim</td>
                       <td>Sim</td>
                     </tr>
                     <tr>
@@ -255,9 +243,10 @@ export default function HomePage() {
                 <p className="plan-offer-price-sub">Cancele quando quiser</p>
                 <div className="plan-offer-divider" />
                 <ul className="plan-offer-features">
-                  <li>Sem anúncios</li>
-                  <li>Metas personalizadas e acompanhamento detalhado</li>
-                  <li>Cursos exclusivos de investimento</li>
+                  <li>Cursos exclusivos de Educação Financeira</li>
+                  <li>Vidas ilimitadas</li>
+                  <li>Ganho de moedas para desbloquear conteúdos exclusivos aumentados</li>
+                  <li>Dobro de XP por mês</li>
                 </ul>
                 <Link href="/register" className="plan-offer-primary">
                   Assinar plano mensal

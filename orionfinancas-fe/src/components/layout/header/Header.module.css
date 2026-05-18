@@ -134,6 +134,59 @@
   object-fit: cover;
 }
 
+.premiumHeaderBtn {
+  background: linear-gradient(135deg, #00c896 0%, #00f2a9 100%);
+  color: #020617;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 10px rgba(0, 200, 150, 0.2);
+  margin-right: 0.5rem;
+}
+
+.premiumHeaderBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 200, 150, 0.3);
+  filter: brightness(1.05);
+}
+
+@media (max-width: 640px) {
+  .premiumHeaderBtn span {
+    display: none;
+  }
+  .premiumHeaderBtn {
+    padding: 0.5rem;
+  }
+
+  /* Public nav: hide "Sobre" and "Serviços", keep only Login/Cadastrar-se */
+  .nav .navLink:not(.btnLogin) {
+    display: none;
+  }
+
+  /* Tighten header padding on mobile */
+  .container {
+    padding: 0 1rem;
+  }
+
+  /* Reduce gap between actions on small screens */
+  .actions {
+    gap: 0.75rem;
+  }
+
+  /* Notification dropdown: cap width so it fits small phones */
+  .dropdown {
+    min-width: min(340px, calc(100vw - 2rem));
+    max-width: calc(100vw - 1rem);
+  }
+}
+
 .dropdownWrapper {
   position: relative;
 }
@@ -249,8 +302,8 @@
 
 .unreadBadge {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -3px;
+  right: -3px;
   width: 8px;
   height: 8px;
   background-color: #ff4d4d;

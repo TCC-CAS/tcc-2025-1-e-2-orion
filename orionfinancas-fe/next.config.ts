@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        // Proxy to Backend
+        destination: `${process.env.BACKEND_URL || 'http://localhost:3001'}/:path*`
+      }
+    ]
+  }
 };
+
 
 export default nextConfig;

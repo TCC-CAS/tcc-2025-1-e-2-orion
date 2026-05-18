@@ -11,6 +11,7 @@ import DeleteConfirmModal from './components/DeleteConfirmModal';
 import { api } from '@/services/api';
 import toast from 'react-hot-toast';
 import QuickTools from './components/QuickTools';
+import { GameTutorial } from '@/components/common/GameTutorial';
 
 const MonthlyChart = dynamic(() => import('./components/MonthlyChart'), { 
     ssr: false,
@@ -28,6 +29,33 @@ interface Transaction {
     date: string;
     category: string;
 }
+
+const FINANCES_TUTORIAL_STEPS = [
+  {
+    title: "Seu Dashboard Financeiro",
+    content: "Aqui você tem uma visão panorâmica do seu dinheiro. O gráfico central mostra o equilíbrio entre o que entra e o que sai.",
+    targetId: "dashboard-chart",
+    placement: "right" as const
+  },
+  {
+    title: "Registrando Movimentações",
+    content: "Use o botão '+ Registrar Movimentação' para anotar seus ganhos e gastos. Manter isso atualizado é o segredo do sucesso!",
+    targetId: "btn-add-tx",
+    placement: "bottom" as const
+  },
+  {
+    title: "Saldo Disponível",
+    content: "O 'Saldo p/ gastar' mostra quanto você realmente tem livre após descontar suas despesas fixas e reservas de investimento.",
+    targetId: "balance-display",
+    placement: "bottom" as const
+  },
+  {
+    title: "Insights do Robô",
+    content: "Fique de olho no rodapé do gráfico! Eu te darei dicas valiosas baseadas no seu comportamento financeiro real.",
+    targetId: "robot-insight",
+    placement: "top" as const
+  }
+];
 
 export default function FinancesPage() {
     const [view, setView] = useState<'resumo' | 'historico'>('resumo');
@@ -134,6 +162,7 @@ export default function FinancesPage() {
                     <p>Simule uma nova entrada ou saída para ver o impacto no seu planejamento.</p>
                 </div>
                 <button
+                    id="btn-add-tx"
                     className={styles.addStepBtn}
                     onClick={() => setIsAddModalOpen(true)}
                 >
@@ -142,7 +171,7 @@ export default function FinancesPage() {
             </div>
 
             <div className={styles.mainDashboard}>
-                <div className={styles.chartArea}>
+                <div id="dashboard-chart" className={styles.chartArea}>
                     <div className={styles.chartSection}>
                         <div className={styles.chartTabs}>
                             <button
@@ -174,7 +203,7 @@ export default function FinancesPage() {
                                             </div>
                                         </header>
 
-                                        <div className={styles.balanceHighlight}>
+                                        <div id="balance-display" className={styles.balanceHighlight}>
                                             <span className={styles.balanceLabel}>Saldo p/ gastar</span>
                                             {isLoading ? (
                                                 <div style={{ height: '36px', width: '120px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', animation: 'pulse 1.5s infinite' }} />
@@ -231,7 +260,7 @@ export default function FinancesPage() {
                         </div>
 
                         {view === 'resumo' && (
-                            <footer className={styles.resumoFooter}>
+                            <footer id="robot-insight" className={styles.resumoFooter}>
                                 <div className={styles.eduCard}>
                                     <div className={styles.eduIcon}>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -344,8 +373,11 @@ export default function FinancesPage() {
                 onSave={saveEdit}
             />
 
-            {/* Modal de Boas-vindas (Onboarding) */}
-            <WelcomeModal isOpen={showWelcome} onClose={closeWelcome} />
+            <GameTutorial 
+              steps={FINANCES_TUTORIAL_STEPS} 
+              tutorialKey="finances_main" 
+              onComplete={() => console.log('Tutorial de finanças concluído')}
+            />
         </div >
     );
 }

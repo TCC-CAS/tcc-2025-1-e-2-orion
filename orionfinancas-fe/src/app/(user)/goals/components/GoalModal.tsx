@@ -26,7 +26,6 @@ const GoalModal: React.FC<GoalModalProps> = ({
         current: '',
         target: '',
         date: '',
-        description: '',
         urgency: 'medium',
     });
 
@@ -37,7 +36,6 @@ const GoalModal: React.FC<GoalModalProps> = ({
                 current: (initialData.current || 0).toString(),
                 target: (initialData.target || 0).toString(),
                 date: initialData.date || '',
-                description: initialData.description || '',
                 urgency: initialData.urgency || 'medium',
             });
         }
@@ -87,6 +85,7 @@ const GoalModal: React.FC<GoalModalProps> = ({
                     <label>Título da Meta</label>
                     <input
                         type="text"
+                        maxLength={60}
                         className={styles.formInput}
                         placeholder="Ex: Viagem de Férias"
                         value={formData.title}
@@ -101,10 +100,17 @@ const GoalModal: React.FC<GoalModalProps> = ({
                         <input
                             type="number"
                             step="0.01"
+                            min="0"
+                            max="9999999999"
                             className={styles.formInput}
                             style={{ color: 'var(--primary-color)', fontWeight: 700 }}
                             value={formData.current}
-                            onChange={(e) => setFormData({ ...formData, current: e.target.value })}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || Number(v) <= 9999999999) {
+                                    setFormData({ ...formData, current: v });
+                                }
+                            }}
                         />
                     </div>
                     <div className={styles.formGroup}>
@@ -112,9 +118,16 @@ const GoalModal: React.FC<GoalModalProps> = ({
                         <input
                             type="number"
                             step="0.01"
+                            min="0"
+                            max="9999999999"
                             className={styles.formInput}
                             value={formData.target}
-                            onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === '' || Number(v) <= 9999999999) {
+                                    setFormData({ ...formData, target: v });
+                                }
+                            }}
                             required
                         />
                     </div>
@@ -136,17 +149,6 @@ const GoalModal: React.FC<GoalModalProps> = ({
                             {formData.target ? `${Math.round(((parseFloat(formData.current) || 0) / (parseFloat(formData.target) || 1)) * 100)}% concluído` : 'Defina o alvo'}
                         </div>
                     </div>
-                </div>
-
-                <div className={styles.formGroup}>
-                    <label>Descrição (opcional)</label>
-                    <textarea
-                        className={styles.formInput}
-                        style={{ minHeight: '80px', resize: 'none' }}
-                        placeholder="Detalhes sobre sua meta..."
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
                 </div>
 
                 <div className={styles.modalFooter}>
