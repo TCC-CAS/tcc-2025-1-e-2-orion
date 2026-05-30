@@ -11,6 +11,60 @@
   --text-muted: #94A3B8;
 
   --header-height: 70px;
+
+  /* Card / modal surfaces */
+  --card-bg: #1E293B;
+  --card-border: #334155;
+
+  /* Semantic surfaces (overridable per theme) */
+  --surface-subtle: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.08);
+  --card-gradient: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+  /* Semantic value colors (income / expense) */
+  --value-positive: #2dd4bf;
+  --value-negative: #ef4444;
+}
+
+/* ── Light theme overrides ─────────────────────────── */
+[data-theme="light"] {
+  --primary-color: #00A87D;
+  --primary-light: #00C896;
+
+  --dark-bg: #EEF2F7;
+  --dark-surface: #FFFFFF;
+  --border-color: #E2E8F0;
+
+  --text-primary: #0B1220;
+  --text-secondary: #475569;
+  --text-muted: #7C8AA0;
+
+  --card-bg: #FFFFFF;
+  --card-border: #E5EAF1;
+
+  --surface-subtle: rgba(15, 23, 42, 0.035);
+  --surface-hover: rgba(15, 23, 42, 0.06);
+  --card-gradient: linear-gradient(135deg, #FFFFFF, #F6F9FC);
+  --shadow-card: 0 6px 20px rgba(15, 23, 42, 0.06);
+
+  --value-positive: #0E9F77;
+  --value-negative: #DC2626;
+}
+
+[data-theme="light"] body {
+  background: var(--dark-bg);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] select option {
+  background: #FFFFFF;
+  color: #0B1220;
+}
+
+/* Default select arrow uses a light stroke; in light theme use a dark stroke */
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
 
 * {

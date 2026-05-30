@@ -58,9 +58,9 @@ const AvatarModal: React.FC<AvatarModalProps> = ({
                                     height: '100%',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: 'var(--surface-subtle)',
                                     borderRadius: '50%',
-                                    color: 'rgba(255,255,255,0.4)'
+                                    color: 'var(--text-muted)'
                                 }}
                             >
                                 <User size={24} />

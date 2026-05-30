@@ -8,12 +8,14 @@ interface AddTransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (tx: any) => void;
+    categories?: string[];
 }
 
 const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     isOpen,
     onClose,
     onAdd,
+    categories = [],
 }) => {
     const [formData, setFormData] = useState({
         type: 'gasto' as 'ganho' | 'gasto',
@@ -137,11 +139,17 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         <input
                             required
                             maxLength={40}
+                            list="add-categories-list"
                             className={styles.formInput}
                             placeholder="Ex: Lazer"
                             value={formData.category}
                             onChange={e => setFormData({ ...formData, category: e.target.value })}
                         />
+                        <datalist id="add-categories-list">
+                            {categories.map(cat => (
+                                <option key={cat} value={cat} />
+                            ))}
+                        </datalist>
                     </div>
                 </div>
 

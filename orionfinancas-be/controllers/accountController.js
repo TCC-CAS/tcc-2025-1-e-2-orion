@@ -937,131 +937,255 @@ const accountController = {
             });
 
             const PDFDocument = require('pdfkit');
-            const doc = new PDFDocument({ margin: 50, size: 'A4' });
+            const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="orion-meus-dados-${Date.now()}.pdf"`);
             doc.pipe(res);
 
-            const BR_DATE = (d) => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+            // Brand palette
+            const COLORS = {
+                primary: '#00f2a9',
+                primaryDark: '#00b380',
+                bgDark: '#0f1729',
+                surface: '#f5f7fb',
+                border: '#e2e8f0',
+                text: '#1a202c',
+                muted: '#64748b',
+                income: '#16a34a',
+                expense: '#dc2626',
+                white: '#ffffff'
+            };
+
+            const PAGE_W = doc.page.width;
+            const PAGE_H = doc.page.height;
+            const MARGIN = 50;
+            const CONTENT_W = PAGE_W - MARGIN * 2;
+            const BOTTOM_LIMIT = PAGE_H - 70;
+
             const BRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const BR_DATE = (d) => {
+                if (!d) return '—';
+                // Already a BR string (dd/mm/yyyy)?
+                if (typeof d === 'string' && /^\d{2}\/\d{2}\/\d{4}/.test(d)) return d.substring(0, 10);
+                const date = new Date(d);
+                return isNaN(date.getTime()) ? '—' : date.toLocaleDateString('pt-BR');
+            };
 
-            // Header
-            doc.fontSize(22).font('Helvetica-Bold').text('Órion Finanças — Exportação de Dados', { align: 'center' });
-            doc.fontSize(10).font('Helvetica').fillColor('#555')
-               .text(`Gerado em ${new Date().toLocaleString('pt-BR')} (LGPD)`, { align: 'center' });
-            doc.moveDown(1.5);
+            const ensureSpace = (needed) => {
+                if (doc.y + needed > BOTTOM_LIMIT) doc.addPage();
+            };
 
-            // Perfil
-            doc.fontSize(14).font('Helvetica-Bold').fillColor('#000').text('1. Perfil');
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#ccc');
-            doc.moveDown(0.3);
-            doc.fontSize(10).font('Helvetica');
+            const sectionTitle = (num, title) => {
+                ensureSpace(40);
+                const y = doc.y;
+                doc.rect(MARGIN, y, 4, 18).fill(COLORS.primary);
+                doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(14)
+                   .text(`${num}. ${title}`, MARGIN + 12, y + 1);
+                doc.moveTo(MARGIN, y + 22).lineTo(MARGIN + CONTENT_W, y + 22).strokeColor(COLORS.border).lineWidth(1).stroke();
+                doc.y = y + 28;
+                doc.fillColor(COLORS.text);
+            };
+
+            const emptyState = (msg) => {
+                doc.font('Helvetica-Oblique').fontSize(10).fillColor(COLORS.muted).text(msg);
+                doc.fillColor(COLORS.text).font('Helvetica');
+                doc.moveDown(0.8);
+            };
+
+            // ============ COVER HEADER ============
+            doc.rect(0, 0, PAGE_W, 110).fill(COLORS.bgDark);
+            doc.fillColor(COLORS.primary).font('Helvetica-Bold').fontSize(26)
+               .text('Órion Finanças', MARGIN, 32);
+            doc.fillColor(COLORS.white).font('Helvetica').fontSize(12)
+               .text('Exportação de Dados Pessoais (LGPD)', MARGIN, 64);
+            doc.fillColor('#94a3b8').fontSize(9)
+               .text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, MARGIN, 84);
+
+            doc.y = 140;
+            doc.fillColor(COLORS.text);
+
+            // ============ 1. PERFIL ============
+            sectionTitle(1, 'Perfil');
             const profileRows = [
                 ['Nome', user.name || '—'],
                 ['Email', user.email || '—'],
                 ['Data de nascimento', BR_DATE(user.birthdate)],
                 ['Membro desde', BR_DATE(user.createdAt)],
                 ['Plano', user.isPremium ? 'PRO' : 'Gratuito'],
+                ['Nível', String(user.profile?.level || 1)],
                 ['XP total', String(user.wallet?.xp || 0)],
                 ['Moedas', String(user.wallet?.coins || 0)],
-                ['Nível', String(user.profile?.level || 1)],
-                ['Sequência atual', String(user.profile?.streak || 0) + ' dias'],
+                ['Sequência atual', `${user.profile?.streak || 0} dias`],
             ];
-            profileRows.forEach(([label, value]) => {
-                doc.font('Helvetica-Bold').text(`${label}: `, { continued: true }).font('Helvetica').text(value);
+            const cardY = doc.y;
+            const rowH = 20;
+            const cardH = profileRows.length * rowH + 10;
+            doc.roundedRect(MARGIN, cardY, CONTENT_W, cardH, 6).fill(COLORS.surface);
+            profileRows.forEach(([label, value], i) => {
+                const ry = cardY + 8 + i * rowH;
+                doc.fillColor(COLORS.muted).font('Helvetica').fontSize(9)
+                   .text(label.toUpperCase(), MARGIN + 14, ry + 4, { width: 160 });
+                doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(10)
+                   .text(value, MARGIN + 180, ry + 3, { width: CONTENT_W - 190 });
             });
-            doc.moveDown(1);
+            doc.y = cardY + cardH + 14;
+            doc.fillColor(COLORS.text);
 
-            // Assinaturas
-            doc.fontSize(14).font('Helvetica-Bold').text('2. Assinaturas');
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#ccc');
-            doc.moveDown(0.3);
-            doc.fontSize(10).font('Helvetica');
+            // ============ 2. ASSINATURAS ============
+            sectionTitle(2, 'Assinaturas');
             if (subscriptions.length === 0) {
-                doc.text('Nenhuma assinatura registrada.');
+                emptyState('Nenhuma assinatura registrada.');
             } else {
-                subscriptions.forEach((s, i) => {
-                    doc.font('Helvetica-Bold').text(`Assinatura ${i + 1}:`);
-                    doc.font('Helvetica').text(`  Plano: ${s.planType || s.plan || '—'}`);
-                    doc.text(`  Status: ${s.status || '—'}`);
-                    doc.text(`  Ativada em: ${BR_DATE(s.activatedAt)}`);
-                    doc.text(`  Expira em: ${BR_DATE(s.expiresAt)}`);
-                    doc.moveDown(0.3);
+                subscriptions.forEach((s) => {
+                    ensureSpace(80);
+                    const sy = doc.y;
+                    doc.roundedRect(MARGIN, sy, CONTENT_W, 70, 6).fillAndStroke(COLORS.surface, COLORS.border);
+                    doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(12)
+                       .text(`Plano ${s.planType || s.plan || '—'}`, MARGIN + 14, sy + 10);
+                    const statusColor = s.status === 'ACTIVE' ? COLORS.income : COLORS.muted;
+                    doc.fillColor(statusColor).font('Helvetica-Bold').fontSize(9)
+                       .text((s.status || '—').toUpperCase(), MARGIN + 14, sy + 28);
+                    doc.fillColor(COLORS.muted).font('Helvetica').fontSize(9)
+                       .text(`Ativada: ${BR_DATE(s.activatedAt)}`, MARGIN + 14, sy + 46)
+                       .text(`Expira: ${BR_DATE(s.expiresAt)}`, MARGIN + 200, sy + 46);
+                    doc.y = sy + 78;
                 });
+                doc.fillColor(COLORS.text);
             }
-            doc.moveDown(0.5);
 
-            // Transações
-            doc.fontSize(14).font('Helvetica-Bold').text('3. Transações Financeiras');
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#ccc');
-            doc.moveDown(0.3);
-            doc.fontSize(10).font('Helvetica');
+            // ============ 3. TRANSAÇÕES ============
+            sectionTitle(3, 'Transações Financeiras');
             if (transactions.length === 0) {
-                doc.text('Nenhuma transação registrada.');
+                emptyState('Nenhuma transação registrada.');
             } else {
-                const colX = [50, 200, 300, 420];
-                doc.font('Helvetica-Bold');
-                doc.text('Data', colX[0], doc.y, { width: 140, continued: true });
-                doc.text('Descrição', colX[1] - doc.x + colX[1], doc.y, { width: 95, continued: true });
-                doc.text('Tipo', { width: 115, continued: true });
-                doc.text('Valor');
-                doc.font('Helvetica');
-                transactions.slice(0, 100).forEach(tx => {
-                    const y = doc.y;
-                    if (y > 750) { doc.addPage(); }
-                    const desc = (tx.title || tx.description || '—').substring(0, 30);
-                    doc.text(BR_DATE(tx.date), colX[0], doc.y, { width: 140, continued: true });
-                    doc.text(desc, { width: 95, continued: true });
-                    doc.text(tx.type === 'income' ? 'Receita' : 'Despesa', { width: 115, continued: true });
-                    doc.fillColor(tx.type === 'income' ? '#16a34a' : '#dc2626').text(BRL(tx.amount)).fillColor('#000');
+                // Column layout
+                const COLS = {
+                    date:  { x: MARGIN + 10,  w: 80 },
+                    desc:  { x: MARGIN + 95,  w: 200 },
+                    type:  { x: MARGIN + 300, w: 80 },
+                    value: { x: MARGIN + 385, w: CONTENT_W - 395, align: 'right' }
+                };
+
+                const drawTableHeader = () => {
+                    const hy = doc.y;
+                    doc.rect(MARGIN, hy, CONTENT_W, 22).fill(COLORS.bgDark);
+                    doc.fillColor(COLORS.white).font('Helvetica-Bold').fontSize(9);
+                    doc.text('DATA',      COLS.date.x,  hy + 7, { width: COLS.date.w });
+                    doc.text('DESCRIÇÃO', COLS.desc.x,  hy + 7, { width: COLS.desc.w });
+                    doc.text('TIPO',      COLS.type.x,  hy + 7, { width: COLS.type.w });
+                    doc.text('VALOR',     COLS.value.x, hy + 7, { width: COLS.value.w, align: 'right' });
+                    doc.y = hy + 22;
+                    doc.fillColor(COLORS.text);
+                };
+
+                drawTableHeader();
+                const rows = transactions.slice(0, 100);
+                rows.forEach((tx, i) => {
+                    if (doc.y + 20 > BOTTOM_LIMIT) {
+                        doc.addPage();
+                        drawTableHeader();
+                    }
+                    const ry = doc.y;
+                    const rh = 20;
+                    if (i % 2 === 0) {
+                        doc.rect(MARGIN, ry, CONTENT_W, rh).fill(COLORS.surface);
+                    }
+                    const isIncome = tx.type === 'income';
+                    const dateStr = BR_DATE(tx.date || tx.createdAt);
+                    const desc = (tx.title || tx.description || '—').substring(0, 38);
+
+                    doc.font('Helvetica').fontSize(9).fillColor(COLORS.text);
+                    doc.text(dateStr, COLS.date.x, ry + 6, { width: COLS.date.w });
+                    doc.text(desc, COLS.desc.x, ry + 6, { width: COLS.desc.w, ellipsis: true });
+                    doc.fillColor(isIncome ? COLORS.income : COLORS.expense).font('Helvetica-Bold');
+                    doc.text(isIncome ? 'Receita' : 'Despesa', COLS.type.x, ry + 6, { width: COLS.type.w });
+                    doc.text((isIncome ? '+ ' : '- ') + BRL(tx.amount), COLS.value.x, ry + 6, { width: COLS.value.w, align: 'right' });
+                    doc.y = ry + rh;
                 });
+                doc.fillColor(COLORS.text);
                 if (transactions.length > 100) {
-                    doc.font('Helvetica').fillColor('#555').text(`… e mais ${transactions.length - 100} transação(ões) não exibidas.`).fillColor('#000');
+                    doc.moveDown(0.5);
+                    doc.font('Helvetica-Oblique').fontSize(9).fillColor(COLORS.muted)
+                       .text(`… e mais ${transactions.length - 100} transação(ões) não exibidas neste relatório.`);
+                    doc.fillColor(COLORS.text);
                 }
+                doc.moveDown(0.8);
             }
-            doc.moveDown(0.5);
 
-            // Metas
-            doc.addPage();
-            doc.fontSize(14).font('Helvetica-Bold').text('4. Metas Financeiras');
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#ccc');
-            doc.moveDown(0.3);
-            doc.fontSize(10).font('Helvetica');
+            // ============ 4. METAS ============
+            ensureSpace(60);
+            sectionTitle(4, 'Metas Financeiras');
             if (goals.length === 0) {
-                doc.text('Nenhuma meta registrada.');
+                emptyState('Nenhuma meta registrada.');
             } else {
-                goals.forEach((g, i) => {
-                    doc.font('Helvetica-Bold').text(`Meta ${i + 1}: ${g.title || '—'}`);
-                    doc.font('Helvetica').text(`  Objetivo: ${BRL(g.targetAmount)}`);
-                    doc.text(`  Acumulado: ${BRL(g.currentAmount)}`);
-                    doc.text(`  Prazo: ${BR_DATE(g.deadline)}`);
-                    doc.text(`  Status: ${g.status || '—'}`);
-                    doc.moveDown(0.3);
-                });
-            }
-            doc.moveDown(0.5);
+                goals.forEach((g) => {
+                    ensureSpace(90);
+                    const gy = doc.y;
+                    const cardHeight = 80;
+                    doc.roundedRect(MARGIN, gy, CONTENT_W, cardHeight, 6).fillAndStroke(COLORS.surface, COLORS.border);
+                    doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(12)
+                       .text(g.goalName || g.title || '—', MARGIN + 14, gy + 10, { width: CONTENT_W - 28 });
 
-            // Notificações recentes
-            doc.fontSize(14).font('Helvetica-Bold').text('5. Notificações Recentes');
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke('#ccc');
-            doc.moveDown(0.3);
-            doc.fontSize(10).font('Helvetica');
+                    const target = Number(g.targetAmount || 0);
+                    const current = Number(g.currentAmount || 0);
+                    const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
+
+                    doc.fillColor(COLORS.muted).font('Helvetica').fontSize(9)
+                       .text(`${BRL(current)} de ${BRL(target)}`, MARGIN + 14, gy + 30);
+                    doc.fillColor(COLORS.primaryDark).font('Helvetica-Bold').fontSize(9)
+                       .text(`${pct.toFixed(0)}%`, MARGIN + CONTENT_W - 50, gy + 30, { width: 36, align: 'right' });
+
+                    // Progress bar
+                    const barY = gy + 46;
+                    const barW = CONTENT_W - 28;
+                    doc.roundedRect(MARGIN + 14, barY, barW, 6, 3).fill(COLORS.border);
+                    if (pct > 0) {
+                        doc.roundedRect(MARGIN + 14, barY, barW * (pct / 100), 6, 3).fill(COLORS.primary);
+                    }
+
+                    doc.fillColor(COLORS.muted).font('Helvetica').fontSize(8)
+                       .text(`Prazo: ${BR_DATE(g.targetDate || g.deadline)}`, MARGIN + 14, gy + 60);
+                    doc.y = gy + cardHeight + 8;
+                });
+                doc.fillColor(COLORS.text);
+            }
+
+            // ============ 5. NOTIFICAÇÕES ============
+            ensureSpace(60);
+            sectionTitle(5, 'Notificações Recentes');
             if (notifications.length === 0) {
-                doc.text('Nenhuma notificação.');
+                emptyState('Nenhuma notificação.');
             } else {
-                notifications.forEach(n => {
-                    if (doc.y > 750) doc.addPage();
-                    doc.font('Helvetica-Bold').text(n.title || '—', { continued: true })
-                       .font('Helvetica').fillColor('#555').text(`  (${BR_DATE(n.createdAt)})`).fillColor('#000');
-                    if (n.message) doc.text(`  ${n.message}`);
-                    doc.moveDown(0.2);
+                notifications.slice(0, 30).forEach((n) => {
+                    ensureSpace(36);
+                    const ny = doc.y;
+                    doc.rect(MARGIN, ny, 3, 28).fill(COLORS.primary);
+                    doc.fillColor(COLORS.text).font('Helvetica-Bold').fontSize(10)
+                       .text(n.title || '—', MARGIN + 12, ny, { width: CONTENT_W - 100 });
+                    doc.fillColor(COLORS.muted).font('Helvetica').fontSize(8)
+                       .text(BR_DATE(n.createdAt), MARGIN + CONTENT_W - 90, ny + 2, { width: 90, align: 'right' });
+                    if (n.message) {
+                        doc.fillColor(COLORS.muted).font('Helvetica').fontSize(9)
+                           .text(n.message, MARGIN + 12, ny + 14, { width: CONTENT_W - 24 });
+                    }
+                    doc.y = ny + 32;
                 });
+                doc.fillColor(COLORS.text);
             }
 
-            // Footer
-            doc.fontSize(8).fillColor('#aaa')
-               .text('Este documento foi gerado automaticamente pela plataforma Órion Finanças em conformidade com a LGPD (Lei 13.709/2018).', 50, 780, { align: 'center', width: 495 });
+            // ============ FOOTER em todas as páginas ============
+            const range = doc.bufferedPageRange();
+            for (let i = 0; i < range.count; i++) {
+                doc.switchToPage(range.start + i);
+                const fy = PAGE_H - 40;
+                doc.lineWidth(0.5).moveTo(MARGIN, fy).lineTo(MARGIN + CONTENT_W, fy).strokeColor(COLORS.border).stroke();
+                doc.fillColor(COLORS.muted).font('Helvetica').fontSize(8)
+                   .text('Documento gerado pela Órion Finanças em conformidade com a LGPD (Lei 13.709/2018).',
+                         MARGIN, fy + 8, { width: CONTENT_W - 60, align: 'left' });
+                doc.text(`Página ${i + 1} de ${range.count}`,
+                         MARGIN + CONTENT_W - 80, fy + 8, { width: 80, align: 'right' });
+            }
 
             doc.end();
         } catch (error) {

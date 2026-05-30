@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, User, Sparkles } from 'lucide-react';
+import { Bell, User, Sparkles, Sun, Moon } from 'lucide-react';
 import styles from './Header.module.css';
 import { useState, useRef, useEffect } from "react";
 import { api } from '@/services/api';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface HeaderProps {
   variant?: 'public' | 'logged';
@@ -28,6 +29,7 @@ export function Header({
   isPremium,
   onPremiumClick
 }: HeaderProps) {
+  const { theme, toggleTheme } = useTheme();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
 
@@ -113,12 +115,28 @@ export function Header({
               <Link href="/userservices" className={styles.navLink}>
                 Serviços
               </Link>
+              <button
+                className={styles.themeBtn}
+                onClick={toggleTheme}
+                aria-label="Alternar tema"
+                title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <Link href="/login" className={`${styles.navLink} ${styles.btnLogin}`}>
                 Login / Cadastrar-se
               </Link>
             </nav>
           ) : (
             <div className={styles.actions}>
+              <button
+                className={styles.themeBtn}
+                onClick={toggleTheme}
+                aria-label="Alternar tema"
+                title={theme === 'dark' ? 'Tema claro' : 'Tema escuro'}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               {!isPremium && (
                 <button 
                   className={styles.premiumHeaderBtn}

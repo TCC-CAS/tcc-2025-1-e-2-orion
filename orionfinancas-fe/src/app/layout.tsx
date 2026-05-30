@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 import { Toaster } from 'react-hot-toast';
 import { VLibrasWidget } from "@/components/common/VLibrasWidget";
 import { UserProvider } from "@/contexts/UserContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export default function RootLayout({
   children,
@@ -36,12 +37,14 @@ export default function RootLayout({
       >
         <Toaster position="top-right" toastOptions={{ className: 'custom-toast' }} />
         <VLibrasWidget />
-        <UserProvider>
-          <div className="app-root">
-            <main>{children}</main>
-            <Footer />
-          </div>
-        </UserProvider>
+        <ThemeProvider>
+          <UserProvider>
+            <div className="app-root">
+              <main>{children}</main>
+              <Footer />
+            </div>
+          </UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

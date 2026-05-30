@@ -1,14 +1,22 @@
 "use client";
 
 import Link from 'next/link';
-import Image from 'next/image';
 import styles from './Register.module.css';
 
 import { Button } from '@/components/ui/button/Button';
 import { Checkbox } from '@/components/ui/checkbox/Checkbox';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { api } from '@/services/api';
 import { useRouter } from 'next/navigation';
+
+type FieldErrors = {
+  name?: string;
+  email?: string;
+  password?: string;
+  birthdate?: string;
+  terms?: string;
+  general?: string;
+};
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -19,19 +27,34 @@ export default function RegisterPage() {
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name as keyof FieldErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  const passwordValidationMessage =
-    'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula, número e caractere especial.';
-  const emailRequiredMessage = 'Informe um email.';
-  const emailInvalidMessage =
-    'Digite um email válido no formato nome@exemplo.com (incluindo @ e domínio).';
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTouched(prev => ({ ...prev, [e.target.name]: true }));
+  };
+
+  const passwordChecks = useMemo(() => {
+    const p = formData.password;
+    return {
+      length: p.length >= 8,
+      upper: /[A-Z]/.test(p),
+      lower: /[a-z]/.test(p),
+      number: /\d/.test(p),
+      special: /[^A-Za-z0-9]/.test(p),
+    };
+  }, [formData.password]);
+
+  const passwordStrong = Object.values(passwordChecks).every(Boolean);
 
   const calculateAge = (birthdate: string) => {
     const today = new Date();
@@ -44,41 +67,45 @@ export default function RegisterPage() {
     return age;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validate = (): FieldErrors => {
+    const e: FieldErrors = {};
+    const name = formData.name.trim();
+    if (!name) e.name = 'Informe seu nome completo.';
+    else if (name.length < 3) e.name = 'O nome deve ter ao menos 3 caracteres.';
+    else if (!/^[A-Za-zÀ-ÿ\s'\-]+$/.test(name)) e.name = 'Use apenas letras, espaços e hifens.';
+
+    if (!formData.email) e.email = 'Informe um email.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      e.email = 'Digite um email válido (ex: nome@exemplo.com).';
+
+    if (!formData.password) e.password = 'Crie uma senha.';
+    else if (!passwordStrong) e.password = 'Sua senha ainda não atende todos os requisitos.';
+
+    if (!formData.birthdate) e.birthdate = 'Informe sua data de nascimento.';
+    else {
+      const age = calculateAge(formData.birthdate);
+      if (isNaN(age)) e.birthdate = 'Data inválida.';
+      else if (age < 18) e.birthdate = 'A plataforma é destinada a maiores de 18 anos.';
+      else if (age > 120) e.birthdate = 'Data de nascimento inválida.';
+    }
+
+    if (!acceptedTerms) e.terms = 'É necessário aceitar os Termos e a Política de Privacidade.';
+
+    return e;
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setTouched({ name: true, email: true, password: true, birthdate: true });
+
+    const validation = validate();
+    if (Object.keys(validation).length > 0) {
+      setErrors(validation);
+      return;
+    }
+
     setLoading(true);
-    setError('');
-
-    if (!formData.birthdate) {
-      setError('Data de nascimento é obrigatória.');
-      setLoading(false);
-      return;
-    }
-
-    const age = calculateAge(formData.birthdate);
-    if (isNaN(age) || age < 18) {
-      setError('A plataforma é destinada a maiores de 18 anos.');
-      setLoading(false);
-      return;
-    }
-
-    if (!acceptedTerms) {
-      setError('É necessário aceitar os Termos de Uso e a Política de Privacidade.');
-      setLoading(false);
-      return;
-    }
-
-    const hasMinLength = formData.password.length >= 8;
-    const hasUppercase = /[A-Z]/.test(formData.password);
-    const hasLowercase = /[a-z]/.test(formData.password);
-    const hasNumber = /\d/.test(formData.password);
-    const hasSpecialChar = /[^A-Za-z0-9]/.test(formData.password);
-
-    if (!hasMinLength || !hasUppercase || !hasLowercase || !hasNumber || !hasSpecialChar) {
-      setError('A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, minúscula, número e caractere especial.');
-      setLoading(false);
-      return;
-    }
+    setErrors({});
 
     try {
       const data = await api.post('/auth/register', {
@@ -86,20 +113,21 @@ export default function RegisterPage() {
         acceptedTerms: true,
         acceptedPrivacy: true
       });
-      
+
       if (data.status === 'OK') {
         router.push('/login?registered=true');
       } else {
-        setError(data.message || 'Erro ao realizar cadastro');
+        setErrors({ general: data.message || 'Erro ao realizar cadastro' });
       }
     } catch (err: unknown) {
       const apiError = err as { message?: string };
-      setError(apiError.message || 'Erro de conexão com o servidor');
+      setErrors({ general: apiError.message || 'Erro de conexão com o servidor' });
     } finally {
       setLoading(false);
     }
   };
 
+  const showPasswordChecklist = touched.password || formData.password.length > 0;
 
   return (
     <main className={styles.page}>
@@ -111,106 +139,115 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</p>}
-          
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+          {errors.general && (
+            <div className={styles.alert} role="alert">
+              <span className={styles.alertIcon}>!</span>
+              <span>{errors.general}</span>
+            </div>
+          )}
+
           <div className={styles.field}>
-            <label>Nome completo</label>
+            <label htmlFor="name">Nome completo</label>
             <input
+              id="name"
               type="text"
               name="name"
               placeholder="Seu nome"
               value={formData.name}
               onChange={handleChange}
-              minLength={3}
+              onBlur={handleBlur}
               maxLength={60}
-              pattern="^[A-Za-zÀ-ÿ\s'\-]+$"
-              title="Use apenas letras, espaços e hifens (mínimo 3 caracteres)"
-              required
+              aria-invalid={!!errors.name}
+              className={errors.name ? styles.inputError : ''}
             />
+            {errors.name && <span className={styles.errorMsg}>{errors.name}</span>}
           </div>
 
           <div className={styles.field}>
-            <label>Email</label>
+            <label htmlFor="email">Email</label>
             <input
+              id="email"
               type="email"
               name="email"
               maxLength={120}
               placeholder="seu@email.com"
               value={formData.email}
               onChange={handleChange}
-              onInvalid={(e) => {
-                const el = e.currentTarget;
-                if (el.validity.valueMissing) {
-                  el.setCustomValidity(emailRequiredMessage);
-                } else {
-                  el.setCustomValidity(emailInvalidMessage);
-                }
-              }}
-              onInput={(e) => {
-                e.currentTarget.setCustomValidity('');
-              }}
-              title={emailInvalidMessage}
-              required 
+              onBlur={handleBlur}
+              aria-invalid={!!errors.email}
+              className={errors.email ? styles.inputError : ''}
             />
+            {errors.email && <span className={styles.errorMsg}>{errors.email}</span>}
           </div>
 
           <div className={styles.field}>
-            <label>Senha segura</label>
-            <input 
-              type="password" 
+            <label htmlFor="password">Senha segura</label>
+            <input
+              id="password"
+              type="password"
               name="password"
-              placeholder="••••••••" 
+              placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
-              onInvalid={(e) => {
-                e.currentTarget.setCustomValidity(passwordValidationMessage);
-              }}
-              onInput={(e) => {
-                e.currentTarget.setCustomValidity('');
-              }}
-              minLength={8}
+              onBlur={handleBlur}
               maxLength={128}
-              pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$"
-              title={passwordValidationMessage}
-              required
+              aria-invalid={!!errors.password}
+              className={errors.password ? styles.inputError : ''}
             />
-            <small>
-              Use ao menos 8 caracteres com letra maiúscula, minúscula, número e caractere especial.
-            </small>
+            {showPasswordChecklist && (
+              <ul className={styles.checklist}>
+                <ChecklistItem ok={passwordChecks.length} label="Mínimo 8 caracteres" />
+                <ChecklistItem ok={passwordChecks.upper} label="Uma letra maiúscula (A-Z)" />
+                <ChecklistItem ok={passwordChecks.lower} label="Uma letra minúscula (a-z)" />
+                <ChecklistItem ok={passwordChecks.number} label="Um número (0-9)" />
+                <ChecklistItem ok={passwordChecks.special} label="Um caractere especial (!@#...)" />
+              </ul>
+            )}
+            {errors.password && !showPasswordChecklist && (
+              <span className={styles.errorMsg}>{errors.password}</span>
+            )}
           </div>
 
           <div className={styles.field}>
-            <label>Data de nascimento</label>
-            <input 
-              type="date" 
+            <label htmlFor="birthdate">Data de nascimento</label>
+            <input
+              id="birthdate"
+              type="date"
               name="birthdate"
               value={formData.birthdate}
               onChange={handleChange}
-              required 
+              onBlur={handleBlur}
+              max={new Date().toISOString().split('T')[0]}
+              aria-invalid={!!errors.birthdate}
+              className={errors.birthdate ? styles.inputError : ''}
             />
+            {errors.birthdate && <span className={styles.errorMsg}>{errors.birthdate}</span>}
           </div>
 
-          <Checkbox
-            id="terms"
-            required
-            checked={acceptedTerms}
-            onChange={(checked: boolean) => setAcceptedTerms(checked)}
-            label={
-              <span className={styles.checkboxText}>
-                Concordo com os
-                <Link href="/terms"> Termos de Serviço</Link> e
-                <Link href="/privacy"> Política de Privacidade</Link>
-              </span>
-            }
-          />
+          <div className={styles.termsWrapper}>
+            <Checkbox
+              id="terms"
+              checked={acceptedTerms}
+              onChange={(checked: boolean) => {
+                setAcceptedTerms(checked);
+                if (checked && errors.terms) setErrors(prev => ({ ...prev, terms: undefined }));
+              }}
+              label={
+                <span className={styles.checkboxText}>
+                  Concordo com os
+                  <Link href="/terms" className={styles.inlineLink}> Termos de Serviço</Link> e
+                  <Link href="/privacy" className={styles.inlineLink}> Política de Privacidade</Link>
+                </span>
+              }
+            />
+            {errors.terms && <span className={styles.errorMsg}>{errors.terms}</span>}
+          </div>
 
           <Button type="submit" variant="primary" disabled={loading}>
             {loading ? 'Registrando...' : 'Registrar-se'}
           </Button>
         </form>
-
-
 
         <div className={styles.footerLink}>
           <span>Já possui conta?</span>
@@ -218,5 +255,14 @@ export default function RegisterPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function ChecklistItem({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <li className={ok ? styles.checkOk : styles.checkPending}>
+      <span className={styles.checkIcon} aria-hidden="true">{ok ? '✓' : '○'}</span>
+      <span>{label}</span>
+    </li>
   );
 }

@@ -61,8 +61,8 @@
   flex-direction: column;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-card);
   position: relative;
 }
 
@@ -80,7 +80,7 @@
   gap: 0.75rem;
   position: relative;
   min-height: 180px;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+  background: var(--card-gradient);
 }
 
 .modernModuleCard.completed .cardInfo {
@@ -90,6 +90,19 @@
 .modernModuleCard.active .cardInfo {
   background: linear-gradient(135deg, rgba(0, 200, 150, 0.25), rgba(15, 23, 42, 0.8));
   border-bottom: 2px solid var(--primary-color);
+}
+
+/* Light-theme adjustments for tinted card states */
+:global([data-theme="light"]) .modernModuleCard.completed .cardInfo {
+  background: linear-gradient(135deg, rgba(0, 168, 125, 0.12), #FFFFFF);
+}
+
+:global([data-theme="light"]) .modernModuleCard.active .cardInfo {
+  background: linear-gradient(135deg, rgba(0, 168, 125, 0.16), #F6F9FC);
+}
+
+:global([data-theme="light"]) .playIconContainer {
+  background: var(--surface-subtle);
 }
 
 .cardLabel {
@@ -139,6 +152,11 @@
   align-items: center;
   gap: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+:global([data-theme="light"]) .cardStats {
+  background: #F1F5F9;
+  border-top: 1px solid var(--card-border);
 }
 
 .statItem {
@@ -203,13 +221,15 @@
   flex-direction: column;
   gap: 1.5rem;
   animation: slideUp 0.5s ease-out;
-  overflow: hidden;
+  /* overflow visible permite o popup transbordar o card pra dar mais profundidade */
+  overflow: visible;
 }
 
 .activeModuleContainer::before {
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
   pointer-events: none;
   z-index: 0;
   background-image: 
@@ -227,6 +247,7 @@
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: inherit;
   pointer-events: none;
   z-index: 0;
   background-image:
@@ -252,6 +273,7 @@
   position: absolute;
   top: 1.25rem;
   left: 1.5rem;
+  z-index: 1;
   padding: 0.4rem 0.7rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -352,7 +374,7 @@
   flex-direction: column;
   align-items: center;
   width: 84px; /* Mesma largura do nó */
-  z-index: 5;
+  z-index: 100;
 }
 
 .activeTooltip {
@@ -435,7 +457,7 @@
   position: absolute;
   top: 42px;
   height: 116px;
-  border: 4px dashed rgba(255, 255, 255, 0.22);
+  border: 4px dashed rgba(148, 163, 184, 0.5);
   z-index: 1;
   pointer-events: none;
 }
@@ -1206,8 +1228,8 @@
 
 .feedbackInput {
   flex: 1;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 1rem 1.25rem;
   color: var(--text-primary);
@@ -1222,7 +1244,7 @@
 
 .btnSendFeedback {
   background: var(--primary-color);
-  color: var(--dark-bg);
+  color: #04231a;
   border: none;
   border-radius: 12px;
   padding: 0 1.5rem;
@@ -1271,25 +1293,45 @@
     min-height: auto;
   }
 
+  /* Stack vertical no mobile — texto ocupa largura total, imagem fica acima e enxuta */
   .studyLayout {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+    width: 100%;
   }
 
   .studyTextContent {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     font-size: 1rem;
-    line-height: 1.6;
+    line-height: 1.65;
     gap: 1rem;
+    order: 2;
   }
 
   .studyLessonTitle {
     font-size: 1.25rem;
   }
 
-  /* Image placeholder shouldn't take a full square on mobile */
+  /* Imagem acima do texto, compacta, ocupando largura cheia */
   .studyImagePlaceholder {
-    aspect-ratio: auto;
+    order: 1;
+    width: 100% !important;
+    aspect-ratio: auto !important;
+    height: 180px !important;
     max-height: 180px;
+  }
+
+  .studyImagePlaceholder .placeholderBox {
+    width: 100%;
+    height: 100%;
+  }
+
+  .studyBulletList li {
+    padding-left: 1.25rem;
   }
 
   /* ---------- Feedback / rating ---------- */
@@ -1362,7 +1404,7 @@
     height: 116px !important;
     top: 42px !important;
     border: none !important;
-    border-left: 4px dashed rgba(255, 255, 255, 0.22) !important;
+    border-left: 4px dashed rgba(148, 163, 184, 0.5) !important;
     border-radius: 0 !important;
     transform: translateX(-2px) !important;
   }
@@ -1423,11 +1465,11 @@
 }
 
 .studyCard {
-  background: rgba(30, 41, 59, 1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--dark-surface);
+  border: 1px solid var(--card-border);
   border-radius: 24px;
   padding: 2.5rem 3rem;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-card);
   min-height: 420px;
   display: flex;
   flex-direction: column;
@@ -1512,7 +1554,7 @@
 
 .feedbackQuestion {
   font-size: 1rem;
-  color: #fff;
+  color: var(--text-primary);
   margin-bottom: 0.75rem;
 }
 
@@ -1618,27 +1660,52 @@
   box-shadow: 0 8px 25px rgba(0, 200, 150, 0.3);
 }
 
-/* Lesson Preview Pop-up */
+/* Lesson Preview Pop-up — bottom sheet fixo, renderizado via Portal no body.
+   Centralização por left/right + margin auto (sem transform, para não conflitar
+   com a animação de entrada). */
 .nodePopup {
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 260px;
+  position: fixed;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 12px);
+  left: 1rem;
+  right: 1rem;
+  margin: 0 auto;
+  width: auto;
+  max-width: 420px;
   background: rgba(15, 23, 42, 0.98);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
+  border: 1px solid rgba(0, 242, 169, 0.35);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 20px;
   padding: 1.5rem;
-  z-index: 10000;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 200, 150, 0.15);
-  animation: popupFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 10001;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.85),
+    0 0 40px rgba(0, 242, 169, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  animation: popupRise 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes popupFadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px) scale(0.95); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+@keyframes popupRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+
+/* Backdrop que escurece o resto da tela e fecha o popup ao clicar */
+.popupBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  animation: popupBackdropFade 0.2s ease;
+}
+
+@keyframes popupBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popupArrow { display: none; }
 
 .popupContent {
   display: flex;
@@ -1659,7 +1726,7 @@
 .popupLesson {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
   line-height: 1.2;
 }
 
@@ -1723,30 +1790,107 @@
     border-radius: 20px;
   }
 
-  /* Centralizar e alinhar a trilha perfeitamente no mobile */
-  .trailStep {
-    left: 50% !important;
+  /* Centralizar trilha no mobile — o flex column já centraliza,
+     então só anulamos o offset inline do zigzag aplicado em desktop. */
+  .nodeWrapper {
+    transform: none !important;
+  }
+
+  /* Popup vira bottom sheet no mobile — fica ACIMA da navbar inferior
+     com backdrop escurecendo o resto da tela. */
+  .nodePopup {
+    position: fixed !important;
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 8px) !important;
+    z-index: 10001 !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: calc(100vh - 240px) !important;
+    overflow-y: auto !important;
+    transform: none !important;
+    border-radius: 20px !important;
+    padding: 1.25rem !important;
+    z-index: 1000 !important;
+    border-top: 3px solid var(--primary-color) !important;
+    animation: popupSlideUp 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+  }
+
+  /* Backdrop full-screen via pseudo — escurece tudo atrás do popup.
+     pointer-events: none deixa o clique passar pro modulesContainer (que fecha). */
+  .nodePopup::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(2px);
+    z-index: -1;
+    pointer-events: none;
+    animation: backdropFadeIn 0.2s ease;
+  }
+
+  /* "Pegador" estilo bottom sheet no topo do popup */
+  .nodePopup::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .popupArrow {
+    display: none !important;
+  }
+
+  .popupStartBtn {
+    width: 100%;
+    padding: 1rem !important;
+    font-size: 1.05rem !important;
+    animation: btnRiseAndPulse 1.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite !important;
+  }
+
+  @keyframes btnRiseAndPulse {
+    0%   { transform: translateY(0);    box-shadow: 0 4px 15px rgba(0, 200, 150, 0.3); }
+    50%  { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(0, 200, 150, 0.5); }
+    100% { transform: translateY(0);    box-shadow: 0 4px 15px rgba(0, 200, 150, 0.3); }
+  }
+
+  @keyframes popupSlideUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .simpleConnector {
     left: 50% !important;
     width: 0 !important;
-    border-left: 4px dashed rgba(255, 255, 255, 0.22) !important;
+    border-left: 4px dashed rgba(148, 163, 184, 0.5) !important;
     border-top: none !important;
     border-bottom: none !important;
     border-right: none !important;
-    transform: translateX(-50%);
+    transform: translateX(-2px);
   }
 
   /* Ajustes da Arena de Batalha */
   .battleArena {
-    padding: 0 0.5rem;
-    height: 140px; 
+    padding: 0 0.75rem;
+    height: 140px;
     border-radius: 16px;
+    overflow: hidden;
   }
 
   .playerSide, .enemySide {
     width: 80px;
+    min-width: 0;
   }
 
   .spriteContainer {
@@ -1754,13 +1898,66 @@
     height: 80px !important;
   }
 
+  /* Barra de vida cabe dentro do lado (80px) sem overflow */
+  .healthBar {
+    width: 80px !important;
+    max-width: 100% !important;
+  }
+
   .spriteLabel {
     bottom: -15px !important;
-    font-size: 0.7rem;
+    font-size: 0.6rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
   }
 
   .vsIndicator {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  /* Matching quiz — coluna esquerda menor, direita maior */
+  .matchingGrid {
+    grid-template-columns: 2fr 3fr !important;
+    gap: 0.5rem !important;
+  }
+
+  .matchingColumn h4 {
+    font-size: 0.75rem !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    line-height: 1.3 !important;
+    min-height: 2.6rem !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .matchingItem {
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    min-height: 3rem !important;
+  }
+
+  .dragDropItem {
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.8rem !important;
+    min-height: 3rem !important;
+    gap: 0.4rem !important;
+  }
+
+  .dragDropText {
+    font-size: 0.8rem !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .dragDropNumber {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.7rem !important;
+    flex-shrink: 0 !important;
   }
 
   /* Textos e Botões */
@@ -1809,4 +2006,44 @@
   .feedbackCard {
     padding: 1.5rem 1rem;
   }
+}
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES — remap dark surfaces / borders to light equivalents
+   (game viewports like .battleArena and overlays like .nodePopup stay dark
+   intentionally)
+   ========================================================================== */
+:global([data-theme="light"]) .answerButton,
+:global([data-theme="light"]) .quizOptionButton,
+:global([data-theme="light"]) .backToModulesBtn,
+:global([data-theme="light"]) .placeholderBox,
+:global([data-theme="light"]) .rewardCard,
+:global([data-theme="light"]) .feedbackItem {
+  background: var(--surface-subtle);
+  border-color: var(--border-color);
+}
+
+:global([data-theme="light"]) .answerButton:hover,
+:global([data-theme="light"]) .quizOptionButton:hover,
+:global([data-theme="light"]) .backToModulesBtn:hover,
+:global([data-theme="light"]) .rewardCard:hover {
+  background: rgba(0, 168, 125, 0.08);
+  border-color: var(--primary-color);
+}
+
+:global([data-theme="light"]) .summaryPanel {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+  box-shadow: var(--shadow-card);
+}
+
+:global([data-theme="light"]) .ratingSection {
+  border-top-color: var(--border-color);
+}
+
+:global([data-theme="light"]) .nodePopup {
+  background: var(--card-bg);
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, 0.25),
+    0 0 30px rgba(0, 168, 125, 0.15);
 }

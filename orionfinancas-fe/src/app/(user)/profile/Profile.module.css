@@ -350,8 +350,8 @@
 }
 
 .statsCard {
-    background: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     padding: 1rem;
     border-radius: 16px;
     display: flex;
@@ -430,7 +430,7 @@
 .graphArea {
     width: 100%;
     height: 180px;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--surface-subtle);
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
@@ -848,12 +848,12 @@
 }
 
 .modalContent {
-    background: #1e293b;
+    background: var(--card-bg);
     width: 95%;
     max-width: 550px;
     padding: 2.2rem;
     border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border);
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1080,4 +1080,48 @@
     text-transform: uppercase;
     letter-spacing: 0.8px;
     box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+}
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES
+   ========================================================================== */
+:global([data-theme="light"]) .userName {
+    background: none;
+    -webkit-text-fill-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
+:global([data-theme="light"]) .actionBtn,
+:global([data-theme="light"]) .balanceBox,
+:global([data-theme="light"]) .urgencyBox,
+:global([data-theme="light"]) .formInput,
+:global([data-theme="light"]) .editInput,
+:global([data-theme="light"]) .progressEdit,
+:global([data-theme="light"]) .cancelBtn,
+:global([data-theme="light"]) .detailBtn,
+:global([data-theme="light"]) .missionItem,
+:global([data-theme="light"]) .optionCircle,
+:global([data-theme="light"]) .progressBar {
+    background: var(--surface-subtle);
+    border-color: var(--border-color);
+}
+
+:global([data-theme="light"]) .actionBtn:hover,
+:global([data-theme="light"]) .detailBtn:hover,
+:global([data-theme="light"]) .missionItem:hover {
+    background: var(--surface-hover);
+}
+
+:global([data-theme="light"]) .tabBtn:hover:not(.active) {
+    background: var(--surface-subtle);
+}
+
+:global([data-theme="light"]) .suggestedLesson {
+    background: linear-gradient(135deg, rgba(0, 168, 125, 0.08) 0%, var(--card-bg) 100%);
+    border: 1px solid rgba(0, 168, 125, 0.2);
+}
+
+:global([data-theme="light"]) .statRow,
+:global([data-theme="light"]) .modalStatRow {
+    border-bottom-color: var(--border-color);
 }

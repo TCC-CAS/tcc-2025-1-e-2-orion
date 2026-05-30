@@ -33,12 +33,14 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
                             <th>Tipo</th>
                             <th>Título / Categoria</th>
                             <th style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: '120px' }}>Valor</th>
+                            <th style={{ textAlign: 'right', whiteSpace: 'nowrap', minWidth: '120px', color: '#94a3b8' }}>Saldo Antes</th>
                             <th style={{ textAlign: 'center' }}>Data</th>
                             <th style={{ textAlign: 'right' }}>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {transactions.map((tx) => (
+                        {/* Show oldest → newest so running balance makes sense visually */}
+                        {[...transactions].reverse().map((tx) => (
                             <tr key={tx.id}>
                                 <td>
                                     <span className={`${styles.typeIndicator} ${tx.type === 'ganho' ? styles.typeGanho : styles.typeGasto}`}>
@@ -51,6 +53,11 @@ const HistoryModal: React.FC<HistoryModalProps> = ({
                                 </td>
                                 <td style={{ fontWeight: 800, color: tx.type === 'ganho' ? '#2dd4bf' : '#ef4444', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                     {tx.type === 'ganho' ? '+' : '-'} R$ {tx.amount.toFixed(2).replace('.', ',')}
+                                </td>
+                                <td style={{ textAlign: 'right', whiteSpace: 'nowrap', fontSize: '0.85rem', color: tx.saldoAntes !== undefined && tx.saldoAntes >= 0 ? '#2dd4bf' : '#ef4444', fontWeight: 600 }}>
+                                    {tx.saldoAntes !== undefined
+                                        ? `R$ ${tx.saldoAntes.toFixed(2).replace('.', ',')}`
+                                        : '—'}
                                 </td>
                                 <td style={{ color: 'var(--text-secondary)', textAlign: 'center' }}>{tx.date}</td>
                                 <td>

@@ -197,7 +197,7 @@ export default function GoalsPage() {
                             </div>
                         ))
                     ) : goals.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', width: '100%' }}>
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', width: '100%' }}>
                             Nenhuma meta registrada. Que tal criar uma agora?
                         </div>
                     ) : (

@@ -152,6 +152,12 @@
     -webkit-text-fill-color: transparent;
 }
 
+:global([data-theme="light"]) .centerValue {
+    background: none;
+    -webkit-text-fill-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
 .detailsBtn {
     margin-top: 2rem;
     background: var(--text-secondary);
@@ -226,6 +232,12 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
 }
 
+:global([data-theme="light"]) .chartSection {
+    background: linear-gradient(165deg, #FFFFFF 0%, #F6F9FC 100%);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--shadow-card);
+}
+
 .chartTabs {
     display: flex;
     gap: 0.25rem;
@@ -252,6 +264,17 @@
     background: rgba(45, 212, 191, 0.1);
     color: #2dd4bf;
     box-shadow: 0 4px 12px rgba(45, 212, 191, 0.1);
+}
+
+:global([data-theme="light"]) .chartTabs {
+    background: var(--surface-subtle);
+    border: 1px solid var(--card-border);
+}
+
+:global([data-theme="light"]) .activeTab {
+    background: #FFFFFF;
+    color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 .resumoView {
@@ -329,6 +352,20 @@
     color: #2dd4bf;
     font-size: 0.75rem;
     font-weight: 700;
+}
+
+:global([data-theme="light"]) .healthBadge {
+    background: rgba(14, 159, 119, 0.1);
+    border-color: rgba(14, 159, 119, 0.25);
+    color: var(--value-positive);
+}
+
+:global([data-theme="light"]) .amountGanho {
+    color: var(--value-positive);
+}
+
+:global([data-theme="light"]) .amountGasto {
+    color: var(--value-negative);
 }
 
 .pieWrapper {
@@ -645,6 +682,46 @@
 
 .amountGasto {
     color: #ef4444;
+}
+
+.saldoAntes {
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* ── Simulated money banner ──────────────────────────── */
+.simulatedBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(255, 184, 0, 0.08);
+    border: 1px solid rgba(255, 184, 0, 0.25);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+:global([data-theme="light"]) .simulatedBanner {
+    background: rgba(217, 119, 6, 0.1);
+    border-color: rgba(217, 119, 6, 0.3);
+    color: #92500e;
+}
+
+:global([data-theme="light"]) .simulatedBanner strong {
+    color: #7a3e06;
+}
+
+:global([data-theme="light"]) .simulatedIcon {
+    color: #b45309;
+}
+
+.simulatedIcon {
+    display: flex;
+    align-items: center;
+    color: #E0A500;
+    flex-shrink: 0;
 }
 
 /* =========
@@ -1580,4 +1657,39 @@
         margin: 1rem;
         max-width: calc(100% - 2rem);
     }
+}
+
+/* ==========================================================================
+   LIGHT THEME — remap translucent dark surfaces to subtle light tints
+   ========================================================================== */
+:global([data-theme="light"]) .breakdownItem,
+:global([data-theme="light"]) .activityList,
+:global([data-theme="light"]) .eduCard,
+:global([data-theme="light"]) .summaryCard,
+:global([data-theme="light"]) .overviewCard,
+:global([data-theme="light"]) .typeSelectGroup,
+:global([data-theme="light"]) .formInput,
+:global([data-theme="light"]) .currencyPrefix,
+:global([data-theme="light"]) .actionIconBtn,
+:global([data-theme="light"]) .infoTag,
+:global([data-theme="light"]) .modalFooter,
+:global([data-theme="light"]) .transRow {
+    background: var(--surface-subtle);
+}
+
+:global([data-theme="light"]) .activityItem:hover,
+:global([data-theme="light"]) .eduCard:hover,
+:global([data-theme="light"]) .transRow:hover,
+:global([data-theme="light"]) .secondaryBtnWide {
+    background: var(--surface-hover);
+}
+
+:global([data-theme="light"]) .historyTable th {
+    background: var(--surface-subtle);
+}
+
+:global([data-theme="light"]) .actionBanner,
+:global([data-theme="light"]) .recentTransactions {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
 }

@@ -5,10 +5,36 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import styles from '../Finances.module.css';
 
 interface MonthlyChartProps {
-    data: any[];
+    data: { name: string; value: number; color: string }[];
 }
 
+type FocusKey = 'sem-dados' | 'poupanca' | 'equilibrio' | 'limite' | 'atencao' | 'critico';
+
+const focusMap: Record<FocusKey, { label: string; color: string }> = {
+    'sem-dados':  { label: 'Sem dados',  color: '#94a3b8' },
+    'poupanca':   { label: 'Poupança',   color: '#00f2a9' },
+    'equilibrio': { label: 'Equilíbrio', color: '#2dd4bf' },
+    'limite':     { label: 'No limite',  color: '#facc15' },
+    'atencao':    { label: 'Atenção',    color: '#f97316' },
+    'critico':    { label: 'Crítico',    color: '#ef4444' },
+};
+
+const computeFocus = (income: number, expenses: number): FocusKey => {
+    if (income === 0 && expenses === 0) return 'sem-dados';
+    if (income === 0) return 'critico';
+    const ratio = (income - expenses) / income;
+    if (ratio >= 0.2) return 'poupanca';
+    if (ratio > 0)    return 'equilibrio';
+    if (ratio === 0)  return 'limite';
+    if (ratio > -0.2) return 'atencao';
+    return 'critico';
+};
+
 const MonthlyChart: React.FC<MonthlyChartProps> = ({ data }) => {
+    const income = data[0]?.value ?? 0;
+    const expenses = data[1]?.value ?? 0;
+    const focus = focusMap[computeFocus(income, expenses)];
+
     return (
         <div className={styles.pieWrapper}>
             <ResponsiveContainer width="100%" height={320}>
@@ -27,10 +53,10 @@ const MonthlyChart: React.FC<MonthlyChartProps> = ({ data }) => {
                         animationBegin={0}
                     >
                         {data.map((entry, index) => (
-                            <Cell 
-                                key={`cell-${index}`} 
-                                fill={entry.color} 
-                                stroke="none" 
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke="none"
                             />
                         ))}
                     </Pie>
@@ -49,7 +75,9 @@ const MonthlyChart: React.FC<MonthlyChartProps> = ({ data }) => {
             </ResponsiveContainer>
             <div className={styles.chartCenterInfo}>
                 <span className={styles.centerLabel}>Seu Foco</span>
-                <span className={styles.centerValue}>Equilíbrio</span>
+                <span className={styles.centerValue} style={{ color: focus.color }}>
+                    {focus.label}
+                </span>
             </div>
         </div>
     );

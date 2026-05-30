@@ -12,6 +12,7 @@ import { api } from '@/services/api';
 import toast from 'react-hot-toast';
 import QuickTools from './components/QuickTools';
 import { GameTutorial } from '@/components/common/GameTutorial';
+import { Gamepad2 } from 'lucide-react';
 
 const MonthlyChart = dynamic(() => import('./components/MonthlyChart'), { 
     ssr: false,
@@ -28,6 +29,24 @@ interface Transaction {
     amount: number;
     date: string;
     category: string;
+    saldoAntes?: number;
+}
+
+function parsePtBRDate(dateStr: string): number {
+    const parts = dateStr?.split('/');
+    if (!parts || parts.length < 3) return 0;
+    const [d, m, y] = parts.map(Number);
+    return new Date(y, m - 1, d).getTime();
+}
+
+function enrichWithRunningBalance(txs: Transaction[]): Transaction[] {
+    const sorted = [...txs].sort((a, b) => parsePtBRDate(a.date) - parsePtBRDate(b.date));
+    let running = 0;
+    return sorted.map(tx => {
+        const saldoAntes = running;
+        running += tx.type === 'ganho' ? tx.amount : -tx.amount;
+        return { ...tx, saldoAntes };
+    });
 }
 
 const FINANCES_TUTORIAL_STEPS = [
@@ -113,6 +132,13 @@ export default function FinancesPage() {
 
     const { income: totalIncome, expenses: totalExpensesByCtx, balance, invested, fixed } = totals;
 
+    const enrichedTransactions = useMemo(() => enrichWithRunningBalance(transactions), [transactions]);
+
+    const categories = useMemo(() =>
+        [...new Set(transactions.map(tx => tx.category).filter(Boolean))],
+        [transactions]
+    );
+
     const pieData = useMemo(() => [
         { name: 'Ganhos', value: totalIncome, color: '#2dd4bf' },
         { name: 'Gastos totais', value: totalExpensesByCtx, color: '#ef4444' }
@@ -156,6 +182,15 @@ export default function FinancesPage() {
 
     return (
         <div className={styles.financesContainer}>
+            {/* Aviso de ambiente educacional */}
+            <div className={styles.simulatedBanner}>
+                <span className={styles.simulatedIcon}><Gamepad2 size={20} /></span>
+                <span>
+                    <strong>Ambiente educacional simulado</strong> — Os valores registrados aqui
+                    <strong> não são dinheiro real</strong>. Use para aprender a organizar suas finanças!
+                </span>
+            </div>
+
             <div className={styles.actionBanner}>
                 <div className={styles.actionText}>
                     <h3>Pronto para praticar?</h3>
@@ -210,7 +245,7 @@ export default function FinancesPage() {
                                             ) : (
                                                 <span
                                                     className={styles.balanceValueHighlight}
-                                                    style={{ color: balance < 0 ? '#ef4444' : '#2dd4bf' }}
+                                                    style={{ color: balance < 0 ? 'var(--value-negative)' : 'var(--value-positive)' }}
                                                 >
                                                     R$ {balance.toFixed(2).replace('.', ',')}
                                                 </span>
@@ -222,7 +257,7 @@ export default function FinancesPage() {
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Entradas</span>
                                                 {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
-                                                    <span className={styles.breakdownValue} style={{ color: '#2dd4bf' }}>
+                                                    <span className={styles.breakdownValue} style={{ color: 'var(--value-positive)' }}>
                                                         R$ {totalIncome.toFixed(2).replace('.', ',')}
                                                     </span>
                                                 )}
@@ -230,7 +265,7 @@ export default function FinancesPage() {
                                             <div className={styles.breakdownItem}>
                                                 <span className={styles.breakdownLabel}>Saídas</span>
                                                 {isLoading ? <div style={{ height:'20px', width:'80px', background:'rgba(255,255,255,0.05)', borderRadius:'4px' }}/> : (
-                                                    <span className={styles.breakdownValue} style={{ color: '#ef4444' }}>
+                                                    <span className={styles.breakdownValue} style={{ color: 'var(--value-negative)' }}>
                                                         R$ {totalExpensesByCtx.toFixed(2).replace('.', ',')}
                                                     </span>
                                                 )}
@@ -309,12 +344,13 @@ export default function FinancesPage() {
                                 </div>
                             </div>
                         ))
-                    ) : transactions.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem' }}>
+                    ) : enrichedTransactions.length === 0 ? (
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             Nenhuma transação registrada.
                         </div>
                     ) : (
-                        transactions.slice(0, 4).map((tx: Transaction) => (
+                        // Show last 4 (most recent = end of sorted array)
+                        [...enrichedTransactions].reverse().slice(0, 4).map((tx: Transaction) => (
                             <div key={tx.id} className={styles.activityItem}>
                                 <div className={styles.activityIcon} style={{ background: tx.type === 'ganho' ? 'rgba(45, 212, 191, 0.1)' : 'rgba(239, 68, 68, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {tx.type === 'ganho' ? (
@@ -331,7 +367,16 @@ export default function FinancesPage() {
                                 </div>
                                 <div className={styles.activityMain}>
                                     <span className={styles.activityTitle}>{tx.title}</span>
-                                    <span className={styles.activityCategory}>{tx.category} • {tx.date}</span>
+                                    <span className={styles.activityCategory}>
+                                        {tx.category} • {tx.date}
+                                        {tx.saldoAntes !== undefined && (
+                                            <span className={styles.saldoAntes}>
+                                                {' '}| Saldo antes: <strong style={{ color: tx.saldoAntes >= 0 ? 'var(--value-positive)' : 'var(--value-negative)' }}>
+                                                    R$ {tx.saldoAntes.toFixed(2).replace('.', ',')}
+                                                </strong>
+                                            </span>
+                                        )}
+                                    </span>
                                 </div>
                                 <div className={`${styles.activityAmount} ${tx.type === 'ganho' ? styles.amountGanho : styles.amountGasto}`}>
                                     {tx.type === 'ganho' ? '+' : '-'} R$ {tx.amount.toFixed(2).replace('.', ',')}
@@ -343,34 +388,36 @@ export default function FinancesPage() {
             </div>
 
             {/* Modal de Registro de Nova Movimentação */}
-            <AddTransactionModal 
+            <AddTransactionModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onAdd={handleAddTx}
+                categories={categories}
             />
 
             {/* Modal de Histórico Completo */}
-            <HistoryModal 
+            <HistoryModal
                 isOpen={isHistoryModalOpen}
                 onClose={() => setIsHistoryModalOpen(false)}
-                transactions={transactions}
+                transactions={enrichedTransactions}
                 onEdit={setEditingTx}
                 onDelete={setDeletingTxId}
             />
 
             {/* Modal de Confirmação de Exclusão */}
-            <DeleteConfirmModal 
+            <DeleteConfirmModal
                 isOpen={!!deletingTxId}
                 onClose={() => setDeletingTxId(null)}
                 onConfirm={confirmDelete}
             />
 
             {/* Modal de Edição */}
-            <EditTransactionModal 
+            <EditTransactionModal
                 isOpen={!!editingTx}
                 transaction={editingTx}
                 onClose={() => setEditingTx(null)}
                 onSave={saveEdit}
+                categories={categories}
             />
 
             <GameTutorial 

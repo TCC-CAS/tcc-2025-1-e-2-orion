@@ -24,8 +24,8 @@ export default function ForgotPasswordPage() {
       } else {
         setError(data.message || 'Erro ao processar solicitação');
       }
-    } catch (err) {
-      setError('Erro de conexão com o servidor');
+    } catch (err: any) {
+      setError(err?.message || 'Erro de conexão com o servidor');
     } finally {
       setLoading(false);
     }

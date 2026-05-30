@@ -156,14 +156,14 @@ function GoalSimModal({ onClose }: { onClose: () => void }) {
 
 // Shared Styles
 const inputStyle: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: '0.4rem' };
-const labelStyle: React.CSSProperties = { fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', fontWeight: 600 };
-const fieldStyle: React.CSSProperties = { 
-    background: 'rgba(255,255,255,0.05)', 
-    border: '1px solid rgba(255,255,255,0.1)', 
-    borderRadius: '10px', 
-    padding: '0.7rem', 
-    color: '#fff', 
-    outline: 'none' 
+const labelStyle: React.CSSProperties = { fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 };
+const fieldStyle: React.CSSProperties = {
+    background: 'var(--surface-subtle)',
+    border: '1px solid var(--border-color)',
+    borderRadius: '10px',
+    padding: '0.7rem',
+    color: 'var(--text-primary)',
+    outline: 'none'
 };
 const resultStyle: React.CSSProperties = { 
     marginTop: '1rem', 

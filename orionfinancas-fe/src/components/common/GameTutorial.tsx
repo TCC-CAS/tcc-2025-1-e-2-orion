@@ -24,7 +24,10 @@ export function GameTutorial({ steps, onComplete, tutorialKey }: GameTutorialPro
     const [currentStep, setCurrentStep] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+    const [windowSize, setWindowSize] = useState(() => ({
+        width: typeof window !== 'undefined' ? window.innerWidth : 0,
+        height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    }));
 
     const updateTargetRect = useCallback((isStepChange = false) => {
         if (!isVisible) return;
@@ -111,18 +114,22 @@ export function GameTutorial({ steps, onComplete, tutorialKey }: GameTutorialPro
     let dialogueStyle: React.CSSProperties = {};
     let arrowStyle: React.CSSProperties = { display: 'none' };
 
-    if (targetRect && step.placement !== 'center') {
+    const isMobile = windowSize.width === 0 || windowSize.width <= 768;
+
+    // IMPORTANTE: não usamos `transform` para centralizar porque o Framer Motion
+    // controla o transform (animação de scale) e sobrescreveria o translate,
+    // jogando o modal para fora da tela. A centralização é feita via flexbox no
+    // .overlayContainer; aqui só posicionamos casos especiais (desktop com alvo).
+    if (!isMobile && targetRect && step.placement !== 'center') {
         const dialogW = Math.min(600, windowSize.width * 0.9);
-        
-        // If target is in the bottom half of the screen, put dialogue at the top. Otherwise, bottom.
+        const leftPx = Math.max(16, (windowSize.width - dialogW) / 2);
         const isTargetAtBottom = targetRect.top + (targetRect.height / 2) > windowSize.height / 2;
-        
+
         dialogueStyle = {
-            position: 'absolute', // relative to overlay container
-            left: '50%',
-            transform: 'translateX(-50%)',
+            position: 'absolute',
+            left: `${leftPx}px`,
+            width: `${dialogW}px`,
             margin: 0,
-            width: `${dialogW}px`
         };
 
         if (isTargetAtBottom) {
@@ -130,17 +137,15 @@ export function GameTutorial({ steps, onComplete, tutorialKey }: GameTutorialPro
         } else {
             dialogueStyle.bottom = '40px';
         }
-        
-        // Disable arrow since we are using fixed placement
+
         arrowStyle = { display: 'none' };
     } else {
-        // Centered fallback
+        // Centralizado pelo flex do overlay — sem transform para não brigar com o Framer Motion
         dialogueStyle = {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            margin: 0
+            position: 'relative',
+            margin: 0,
+            width: isMobile ? 'calc(100vw - 2rem)' : 'auto',
+            maxWidth: isMobile ? '480px' : '600px',
         };
     }
 

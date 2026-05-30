@@ -77,6 +77,7 @@
 .ctaSection h2 {
   font-size: 2rem;
   margin-bottom: 1rem;
+  color: var(--text-primary);
 }
 
 .ctaSection p {
@@ -208,17 +209,18 @@
   padding: 4rem 2rem;
   background: linear-gradient(
     180deg,
-    rgba(30, 41, 59, 1) 0%,
-    rgba(15, 23, 42, 1) 100%
+    var(--card-bg) 0%,
+    var(--dark-bg) 100%
   );
   border-radius: 30px;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--card-border);
   margin-bottom: 4rem;
 }
 
 .ctaSection h2 {
   font-size: 2rem;
   margin-bottom: 1rem;
+  color: var(--text-primary);
 }
 
 .ctaSection p {

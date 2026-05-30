@@ -272,14 +272,14 @@ export default function SettingsPage() {
                     {activeTab === 'privacy' && (
                         <div className={styles.card}>
                             <h2>Privacidade e seus Dados (LGPD)</h2>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                                 Você tem direito de acessar, exportar e excluir seus dados pessoais a qualquer momento, conforme a Lei Geral de Proteção de Dados.
                             </p>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
                                 <div>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem' }}>Exportar meus dados</h3>
-                                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
                                         Receba um relatório PDF com todas as informações que mantemos sobre você (perfil, transações, metas, assinaturas, notificações).
                                     </p>
                                     <button type="button" className={styles.secondaryBtn} onClick={handleExportData}>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
 
                                 <div>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.4rem', color: '#ef4444' }}>Exclusão permanente</h3>
-                                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
                                         Anonimiza sua conta, remove suas transações, metas e notificações. Esta ação é <strong>irreversível</strong>.
                                     </p>
                                     <button

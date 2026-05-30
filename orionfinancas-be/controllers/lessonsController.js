@@ -66,7 +66,7 @@ const lessonsController = {
         try {
             const db = getDB();
             const userId = req.user.id;
-            const { lessonId, moduleId, trailId } = req.body;
+            const { lessonId, moduleId, trailId, skipRewards } = req.body;
 
             let lessonObjectId = null;
             let moduleObjectId = null;
@@ -157,6 +157,16 @@ const lessonsController = {
 
             // Trigger mission progress
             await missionService.updateProgress(userId, "COMPLETE_LESSON");
+
+            // Soft-fail: aula registrada como concluída, mas sem recompensas nem streak.
+            if (skipRewards === true) {
+                return res.json({
+                    message: "Aula marcada como concluída (sem recompensas)",
+                    status: "OK",
+                    rewards: null,
+                    streakUpdated: false
+                });
+            }
 
             // Award rewards: base (+50 XP, +15 Coins) or reduced (+5 XP, +5 Coins) if already completed
             let rewardAmount = isAlreadyCompleted ? { xp: 5, coins: 5 } : { xp: 50, coins: 15 };

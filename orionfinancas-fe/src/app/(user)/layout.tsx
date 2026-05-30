@@ -15,10 +15,19 @@ import {
     Heart,
     Sparkles,
     Coins,
-    Gem
+    Gem,
+    Sun,
+    Moon,
+    X,
+    Swords,
+    CalendarCheck,
+    Palette,
+    Zap,
+    ChevronRight
 } from 'lucide-react';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { useUser } from '@/contexts/UserContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useEffect, useState, useRef } from 'react';
 import { api } from '@/services/api';
 import { SubscriptionModal } from '@/components/shop/SubscriptionModal';
@@ -41,8 +50,10 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     const pathname = usePathname();
     const router = useRouter();
     const { user, stats: userStats, refreshProfile, clearSession } = useUser();
+    const { theme, toggleTheme } = useTheme();
     const [animateLives, setAnimateLives] = useState(false);
     const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+    const [isCoinsModalOpen, setIsCoinsModalOpen] = useState(false);
     const lastLivesRef = useRef(userStats.lives);
 
     useEffect(() => {
@@ -139,9 +150,9 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                             marginTop: '2rem',
                             padding: '0.75rem 1rem',
                             fontSize: '0.7rem',
-                            color: 'rgba(255,255,255,0.4)',
+                            color: 'var(--text-muted)',
                             textAlign: 'center',
-                            borderTop: '1px solid rgba(255,255,255,0.05)',
+                            borderTop: '1px solid var(--border-color)',
                             lineHeight: 1.5
                         }}>
                             O conteúdo da plataforma Órion Finanças tem caráter exclusivamente educacional, baseado em fontes oficiais (ENEF, Banco Central do Brasil e CVM), e <strong>não constitui recomendação de investimento</strong>. Consulte um profissional credenciado pela CVM antes de tomar decisões financeiras.
@@ -151,9 +162,11 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                     <aside className={styles.sidebarRight}>
                         <div className={styles.gamificationPanel}>
                             {stats.map((stat) => (
-                                <div 
-                                    key={stat.id} 
-                                    className={`${styles.statItem} ${stat.id === 'lives' && animateLives ? styles.lifeLostAnimate : ''}`}
+                                <div
+                                    key={stat.id}
+                                    className={`${styles.statItem} ${stat.id === 'lives' && animateLives ? styles.lifeLostAnimate : ''} ${stat.id === 'coins' ? styles.statItemClickable : ''}`}
+                                    onClick={stat.id === 'coins' ? () => setIsCoinsModalOpen(true) : undefined}
+                                    title={stat.id === 'coins' ? 'Clique para saber mais sobre as moedas' : undefined}
                                 >
                                     <span className={styles.statIcon}>
                                         {stat.icon}
@@ -162,10 +175,85 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                                         <span className={styles.statLabel}>{stat.label}</span>
                                         <span className={styles.statValue}>{stat.value}</span>
                                     </div>
+                                    {stat.id === 'coins' && (
+                                        <span className={styles.coinsHint}>
+                                            <ChevronRight size={16} />
+                                        </span>
+                                    )}
                                 </div>
                             ))}
+
+                            {/* Theme toggle */}
+                            <button
+                                className={styles.themeToggle}
+                                onClick={toggleTheme}
+                                aria-label="Alternar tema"
+                            >
+                                <span className={styles.themeToggleLabel}>
+                                    {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+                                    {theme === 'dark' ? 'Tema Escuro' : 'Tema Claro'}
+                                </span>
+                                <div className={`${styles.themeToggleTrack} ${theme === 'light' ? styles.themeToggleTrackActive : ''}`}>
+                                    <div className={`${styles.themeToggleThumb} ${theme === 'light' ? styles.themeToggleThumbActive : ''}`} />
+                                </div>
+                            </button>
                         </div>
                     </aside>
+
+                    {/* Coins info modal */}
+                    {isCoinsModalOpen && (
+                        <div className={styles.coinsOverlay} onClick={() => setIsCoinsModalOpen(false)}>
+                            <div className={styles.coinsModal} onClick={e => e.stopPropagation()}>
+                                <button className={styles.coinsModalClose} onClick={() => setIsCoinsModalOpen(false)} aria-label="Fechar">
+                                    <X size={20} />
+                                </button>
+                                <div className={styles.coinsModalHeader}>
+                                    <div className={styles.coinsModalIcon}>
+                                        <Coins size={28} color="#FFB800" />
+                                    </div>
+                                    <div>
+                                        <div className={styles.coinsModalTitle}>Moedas Fictícias</div>
+                                        <div className={styles.coinsModalSubtitle}>Sua moeda dentro da plataforma</div>
+                                    </div>
+                                </div>
+
+                                <div className={styles.coinsSection}>
+                                    <div className={styles.coinsSectionTitle}>Como ganhar moedas</div>
+                                    {[
+                                        { label: 'Completar uma lição', reward: '+10', icon: <BookOpen size={16} /> },
+                                        { label: 'Acertar questão no modo batalha', reward: '+5', icon: <Swords size={16} /> },
+                                        { label: 'Completar uma missão diária', reward: '+25', icon: <CalendarCheck size={16} /> },
+                                        { label: 'Manter ofensiva (streak) ativa', reward: '+15/dia', icon: <Flame size={16} /> },
+                                    ].map(item => (
+                                        <div key={item.label} className={styles.coinsEarnItem}>
+                                            <span className={styles.coinsItemIcon}>{item.icon}</span>
+                                            <span>{item.label}</span>
+                                            <span className={styles.coinsEarnBadge}>{item.reward}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className={styles.coinsSection}>
+                                    <div className={styles.coinsSectionTitle}>Como gastar moedas</div>
+                                    {[
+                                        { label: 'Comprar itens exclusivos na Loja', icon: <ShoppingBag size={16} /> },
+                                        { label: 'Desbloquear temas e personalizações', icon: <Palette size={16} /> },
+                                        { label: 'Recarregar vidas instantaneamente', icon: <Heart size={16} /> },
+                                        { label: 'Adquirir boosters de XP', icon: <Zap size={16} /> },
+                                    ].map(item => (
+                                        <div key={item.label} className={styles.coinsSpendItem}>
+                                            <span className={styles.coinsItemIcon}>{item.icon}</span>
+                                            <span>{item.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <p className={styles.coinsDisclaimer}>
+                                    As moedas são exclusivas desta plataforma e <strong>não têm valor monetário real</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Bottom navigation — visible on mobile only (CSS handles display) */}

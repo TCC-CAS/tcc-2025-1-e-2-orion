@@ -16,7 +16,7 @@ const emailService = {
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                         <h2 style="color: #333; text-align: center;">Recuperação de Senha</h2>
-                        
+
                         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                             <p style="margin: 0 0 15px 0;">Olá!</p>
                             <p style="margin: 0 0 15px 0;">
@@ -25,7 +25,7 @@ const emailService = {
                             <p style="margin: 0 0 15px 0;">
                                 Clique no botão abaixo para criar uma nova senha:
                             </p>
-                            
+
                             <div style="text-align: center; margin: 30px 0;">
                                 <a href="${resetLink}" style="
                                     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -38,19 +38,19 @@ const emailService = {
                                     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                                 "> Redefinir Minha Senha</a>
                             </div>
-                            
+
                             <p style="color: #dc3545; font-weight: bold; margin: 20px 0;">
                                 Este link expira em 1 hora.
                             </p>
-                            
+
                             <p style="margin: 20px 0 0 0; color: #6c757d; font-size: 14px;">
                                 Se você não solicitou esta recuperação, ignore este email.
                                 Sua senha permanecerá segura.
                             </p>
                         </div>
-                        
+
                         <hr style="border: none; border-top: 1px solid #dee2e6; margin: 30px 0;">
-                        
+
                         <div style="text-align: center; color: #6c757d; font-size: 12px;">
                             <p style="margin: 0;">
                                 <strong>Orion Finanças</strong> - Seu controle financeiro pessoal
@@ -65,14 +65,14 @@ const emailService = {
 
             if (error) {
                 console.error('Erro Resend (Reset):', error);
-                return false;
+                return { success: false, error: error.message || JSON.stringify(error) };
             }
 
             console.log('E-mail de reset enviado:', data.id);
-            return true;
+            return { success: true };
         } catch (error) {
             console.error('Erro inesperado ao enviar reset:', error);
-            return false;
+            return { success: false, error: error.message || String(error) };
         }
     },
 
@@ -91,8 +91,8 @@ const emailService = {
         try {
             const { data, error } = await resend.emails.send({
                 from: 'Orion Finanças <onboarding@resend.dev>',
-                to: process.env.EMAIL_USER, // Onde você quer receber os contatos
-                reply_to: email, // Permite responder diretamente ao usuário
+                to: process.env.EMAIL_USER,
+                reply_to: email,
                 subject: `Fale Conosco: ${subject} - ${name}`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">

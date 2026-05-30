@@ -41,7 +41,7 @@
     }
 
     .navItem:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--surface-subtle);
         color: var(--text-primary);
     }
 
@@ -134,7 +134,7 @@
         justify-content: space-between;
         align-items: center;
         margin-top: 2rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--border-color);
         padding-top: 1.5rem;
     }
 

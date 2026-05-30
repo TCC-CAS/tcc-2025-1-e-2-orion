@@ -479,7 +479,7 @@
   font-weight: 800;
   color: var(--primary-color);
 
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--surface-subtle);
   border: 1px solid rgba(0, 200, 150, 0.35);
 
   position: relative;

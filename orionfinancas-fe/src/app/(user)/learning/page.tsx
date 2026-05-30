@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import styles from "./Learning.module.css";
 import type { QuizQuestion } from "./lessonsData";
 import { api } from "@/services/api";
@@ -162,6 +162,8 @@ export default function Learning() {
   const [streakUpdated, setStreakUpdated] = useState(false);
   const [receivedRewards, setReceivedRewards] = useState<{ xp: number, coins: number } | null>(null);
   const [isReviewSubmitted, setIsReviewSubmitted] = useState(false);
+  const [quizFailed, setQuizFailed] = useState(false);
+  const failTriggeredRef = useRef(false);
 
   // Scale dos offsets do trail (Duolingo-style) conforme largura da tela.
   // Em desktop usamos 100% (zig-zag completo); em tablet 55%; em mobile 0
@@ -189,7 +191,19 @@ export default function Learning() {
       ]);
 
       if (trailsRes.status === 'OK') {
-        setTrails(trailsRes.data.map((t: any) => ({
+        const difficultyOrder: Record<string, number> = {
+          'INICIANTE': 1,
+          'INTERMEDIARIO': 2,
+          'INTERMEDIÁRIO': 2,
+          'AVANCADO': 3,
+          'AVANÇADO': 3,
+        };
+        const sorted = [...trailsRes.data].sort((a: any, b: any) => {
+          const da = difficultyOrder[(a.difficulty || '').toUpperCase()] ?? 99;
+          const db = difficultyOrder[(b.difficulty || '').toUpperCase()] ?? 99;
+          return da - db;
+        });
+        setTrails(sorted.map((t: any) => ({
           ...t,
           label: t.label || `TRILHA ${t.difficulty || ''}`,
           status: "active",
@@ -205,12 +219,6 @@ export default function Learning() {
     }
   };
 
-  useEffect(() => {
-    if (currentLives === 0 && lessonPhase === "questions") {
-      handleBackToTrail();
-      setNoLivesModalOpen(true);
-    }
-  }, [currentLives, lessonPhase]);
 
   useEffect(() => {
     fetchData();
@@ -332,6 +340,40 @@ export default function Learning() {
   const questions = currentQuiz?.questions ?? [];
   const currentQuestion = questions[currentQuestionIndex];
 
+  // Soft-fail: usuário ficou sem vidas durante o quiz.
+  // Marca o quiz como falho no backend (score 0 → sem rewards) e exibe a tela de conclusão.
+  // Usa ref pra evitar que setState dentro do effect dispare o cleanup e cancele o timeout.
+  useEffect(() => {
+    if (
+      currentLives === 0 &&
+      lessonPhase === "questions" &&
+      currentQuiz &&
+      !failTriggeredRef.current &&
+      currentQuestionIndex < questions.length
+    ) {
+      failTriggeredRef.current = true;
+      const t = setTimeout(async () => {
+        try {
+          await api.post('/quizzes/complete', {
+            quizId: currentQuiz._id,
+            score: 0,
+            lessonId: currentLesson?._id || currentLesson?.id,
+            moduleId: activeModule?._id,
+            trailId: activeTrail?._id
+          });
+        } catch (err) {
+          console.error("Erro ao registrar quiz como falho:", err);
+        }
+        setReceivedRewards(null);
+        setStreakUpdated(false);
+        setQuizFailed(true);
+        setCurrentQuestionIndex(questions.length);
+      }, 1500); // espera animação de morte
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentLives, lessonPhase, currentQuiz]);
+
   // Sincronizar itens quando a questão mudar
   useEffect(() => {
     if (currentQuestion?.type === "dragDrop" && currentQuestion.options) {
@@ -349,6 +391,8 @@ export default function Learning() {
     setCurrentQuestionIndex(0);
     setCurrentQuiz(null);
     setUserQuizResults([]);
+    setQuizFailed(false);
+    failTriggeredRef.current = false;
   };
 
   const goToQuestions = async () => {
@@ -429,9 +473,10 @@ export default function Learning() {
         const response = await api.post('/lessons/complete', {
           lessonId: currentLesson._id || currentLesson.id,
           moduleId: activeModule._id,
-          trailId: activeTrail._id
+          trailId: activeTrail._id,
+          skipRewards: quizFailed
         });
-        setStreakUpdated(response.streakUpdated || false);
+        setStreakUpdated(quizFailed ? false : (response.streakUpdated || false));
         await refreshProfile();
         fetchData(); // Refresh progress/missions
       } catch (error) {
@@ -481,6 +526,23 @@ export default function Learning() {
     setLessonPhase("questions");
     setCurrentQuestionIndex(questions.length); // Marcar como concluído
   };
+
+  // Vitória: inimigo morreu → finaliza o quiz automaticamente após a animação de morte.
+  useEffect(() => {
+    if (
+      lessonPhase === "questions" &&
+      currentQuiz &&
+      enemyHealth === 0 &&
+      questions.length > 0 &&
+      currentQuestionIndex < questions.length
+    ) {
+      const t = setTimeout(() => {
+        completeQuiz();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemyHealth, lessonPhase, currentQuiz]);
 
   const handleSubmitReview = async () => {
     if (rating === 0 || isReviewSubmitted) return;
@@ -558,9 +620,13 @@ export default function Learning() {
     if (isChecking) return;
     setSelectedOptionIndex(index);
     setIsChecking(true);
-    
+
     const correct = currentQuestion?.correctOptionIndex === index;
     setIsCorrect(correct);
+
+    const alreadyAnsweredCorrectly = userQuizResults.some(
+      r => r.question === currentQuestion?.question && r.isCorrect
+    );
 
     // Salvar resultado para feedback apenas na primeira tentativa
     setUserQuizResults(prev => {
@@ -573,13 +639,17 @@ export default function Learning() {
       }];
     });
 
-    triggerBattleAnimation(correct);
+    // Só ataca/perde vida se for a primeira vez respondendo essa questão certo,
+    // ou se errou (errar sempre conta como dano).
+    if (!correct || !alreadyAnsweredCorrectly) {
+      triggerBattleAnimation(correct);
+    }
 
     setTimeout(() => {
       setSelectedOptionIndex(null);
       setIsChecking(false);
       setIsCorrect(null);
-      
+
       if (correct) {
         goToNextQuestion();
       }
@@ -596,7 +666,11 @@ export default function Learning() {
     });
 
     setIsCorrect(isCorrectMatch);
-    
+
+    const alreadyAnsweredCorrectly = userQuizResults.some(
+      r => r.question === currentQuestion.question && r.isCorrect
+    );
+
     setUserQuizResults(prev => {
       if (prev.some(r => r.question === currentQuestion.question)) return prev;
       return [...prev, {
@@ -606,8 +680,10 @@ export default function Learning() {
         isCorrect: isCorrectMatch
       }];
     });
-    
-    triggerBattleAnimation(isCorrectMatch);
+
+    if (!isCorrectMatch || !alreadyAnsweredCorrectly) {
+      triggerBattleAnimation(isCorrectMatch);
+    }
 
     setTimeout(() => {
       setIsChecking(false);
@@ -624,6 +700,10 @@ export default function Learning() {
 
     setIsCorrect(isCorrectOrder);
 
+    const alreadyAnsweredCorrectly = userQuizResults.some(
+      r => r.question === currentQuestion.question && r.isCorrect
+    );
+
     setUserQuizResults(prev => {
       if (prev.some(r => r.question === currentQuestion.question)) return prev;
       return [...prev, {
@@ -634,7 +714,9 @@ export default function Learning() {
       }];
     });
 
-    triggerBattleAnimation(isCorrectOrder);
+    if (!isCorrectOrder || !alreadyAnsweredCorrectly) {
+      triggerBattleAnimation(isCorrectOrder);
+    }
 
     setTimeout(() => {
       setIsChecking(false);
@@ -870,37 +952,67 @@ export default function Learning() {
             <div className={styles.studyViewContainer}>
               <div className={styles.studyWrapper}>
                 <header className={styles.studyHeader} style={{ textAlign: 'center' }}>
-                  <h2 className={styles.studyLessonTitle} style={{ fontSize: '2rem' }}>Aula Concluída!</h2>
-                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Você dominou <strong>{currentLesson.tituloLicao}</strong></p>
+                  <h2 className={styles.studyLessonTitle} style={{ fontSize: '2rem' }}>
+                    {quizFailed ? 'Sem Vidas!' : 'Aula Concluída!'}
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                    {quizFailed
+                      ? <>Você ficou sem vidas em <strong>{currentLesson.tituloLicao}</strong></>
+                      : <>Você dominou <strong>{currentLesson.tituloLicao}</strong></>}
+                  </p>
                 </header>
 
                 <section className={styles.conclusionContent}>
                   <div className={styles.summaryPanel}>
-                    <div className={styles.rewardsRow}>
-                      {streakUpdated && (
-                        <div className={styles.rewardCard}>
-                          <div className={styles.rewardIconWrapper} style={{ color: '#ff5722' }}>
-                            <Flame size={32} fill="currentColor" />
+                    {quizFailed ? (
+                      <div style={{
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.35)',
+                        borderRadius: '14px',
+                        padding: '1rem 1.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.85rem',
+                        marginBottom: '1rem'
+                      }}>
+                        <Heart size={28} color="#ef4444" fill="rgba(239,68,68,0.25)" />
+                        <div>
+                          <p style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '0.15rem' }}>
+                            Esta tentativa não rendeu recompensas
+                          </p>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.4 }}>
+                            Sem XP, moedas ou ofensiva desta vez. A aula fica registrada — refaça
+                            depois (com vidas cheias ou virando PRO) para ganhar as recompensas.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.rewardsRow}>
+                        {streakUpdated && (
+                          <div className={styles.rewardCard}>
+                            <div className={styles.rewardIconWrapper} style={{ color: '#ff5722' }}>
+                              <Flame size={32} fill="currentColor" />
+                            </div>
+                            <span className={styles.rewardValue}>+1</span>
+                            <span className={styles.rewardLabel}>Ofensiva</span>
                           </div>
-                          <span className={styles.rewardValue}>+1</span>
-                          <span className={styles.rewardLabel}>Ofensiva</span>
+                        )}
+                        <div className={styles.rewardCard}>
+                          <div className={styles.rewardIconWrapper} style={{ color: '#ffcc00' }}>
+                            <Coins size={32} fill="currentColor" />
+                          </div>
+                          <span className={styles.rewardValue}>+{receivedRewards?.coins || (userStats.lives === '∞' ? 30 : 15)}</span>
+                          <span className={styles.rewardLabel}>Moedas</span>
                         </div>
-                      )}
-                      <div className={styles.rewardCard}>
-                        <div className={styles.rewardIconWrapper} style={{ color: '#ffcc00' }}>
-                          <Coins size={32} fill="currentColor" />
+                        <div className={styles.rewardCard}>
+                          <div className={styles.rewardIconWrapper} style={{ color: '#00d2ff' }}>
+                            <Zap size={32} fill="currentColor" />
+                          </div>
+                          <span className={styles.rewardValue}>+{receivedRewards?.xp || (userStats.lives === '∞' ? 100 : 50)}</span>
+                          <span className={styles.rewardLabel}>XP Ganho</span>
                         </div>
-                        <span className={styles.rewardValue}>+{receivedRewards?.coins || (userStats.lives === '∞' ? 30 : 15)}</span>
-                        <span className={styles.rewardLabel}>Moedas</span>
                       </div>
-                      <div className={styles.rewardCard}>
-                        <div className={styles.rewardIconWrapper} style={{ color: '#00d2ff' }}>
-                          <Zap size={32} fill="currentColor" />
-                        </div>
-                        <span className={styles.rewardValue}>+{receivedRewards?.xp || (userStats.lives === '∞' ? 100 : 50)}</span>
-                        <span className={styles.rewardLabel}>XP Ganho</span>
-                      </div>
-                    </div>
+                    )}
 
                     <div className={styles.ratingSection}>
                       <p className={styles.ratingTitle}>Feedback do Quiz</p>
@@ -988,7 +1100,7 @@ export default function Learning() {
                 </div>
               </header>
 
-              <section className={styles.studyCard} style={{ height: 'auto', background: 'rgba(15, 23, 42, 0.4)', borderColor: 'rgba(255,255,255,0.05)' }}>
+              <section className={styles.studyCard} style={{ height: 'auto', background: 'var(--dark-surface)', borderColor: 'var(--card-border)' }}>
                 {renderBattleArena()}
                 
                 {currentQuestion?.type === "multipleChoice" && renderMultipleChoice(currentQuestion)}
@@ -1092,70 +1204,80 @@ export default function Learning() {
           </header>
           <div className={styles.trailPath}>
             {(() => {
-              const allLessons = activeTrail.modulos.flatMap((m) => 
+              const allLessons = activeTrail.modulos.flatMap((m) =>
                 m.licoes.map((l, i) => ({ lesson: l, modulo: m, localIdx: i }))
               );
 
-              return allLessons.map((item, idx) => {
-                const nodeOffset = TRAIL_OFFSETS[idx % TRAIL_OFFSETS.length] * trailScale;
-                const isCompleted = progress.some(p => String(p.lessonId) === String(item.lesson._id || item.lesson.id) && p.status === "COMPLETED");
-                const isActive = activeModule?._id === item.modulo._id && activeLessonIndex === item.localIdx;
-                const isLastLesson = idx === allLessons.length - 1;
+              const selectedItem = selectedNode
+                ? allLessons.find(item =>
+                    item.modulo._id === selectedNode.modulo._id && item.localIdx === selectedNode.index
+                  )
+                : null;
 
-                return (
-                  <div key={item.lesson._id || idx} className={styles.trailStep}>
-                    <div className={styles.nodeWrapper} style={{ transform: `translateX(${nodeOffset}px)` }}>
-                       {isActive && !isCompleted && !selectedNode && (
-                        <div className={`${styles.activeTooltip} ${styles.bounceAnimation}`}>
-                          Começar<div className={styles.tooltipArrow} />
-                        </div>
-                      )}
+              return (
+                <>
+                  {allLessons.map((item, idx) => {
+                    const nodeOffset = TRAIL_OFFSETS[idx % TRAIL_OFFSETS.length] * trailScale;
+                    const isCompleted = progress.some(p => String(p.lessonId) === String(item.lesson._id || item.lesson.id) && p.status === "COMPLETED");
+                    const isActive = activeModule?._id === item.modulo._id && activeLessonIndex === item.localIdx;
+                    const isLastLesson = idx === allLessons.length - 1;
 
-                      {/* Pop-up de Preview */}
-                      {selectedNode?.modulo._id === item.modulo._id && selectedNode?.index === item.localIdx && (
-                        <div className={styles.nodePopup} onClick={(e) => e.stopPropagation()}>
-                          <div className={styles.popupContent}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <span className={styles.popupModule}>{item.modulo.titulo}</span>
+                    return (
+                      <div key={item.lesson._id || idx} className={styles.trailStep}>
+                        <div className={styles.nodeWrapper} style={{ transform: `translateX(${nodeOffset}px)` }}>
+                          {isActive && !isCompleted && !selectedNode && (
+                            <div className={`${styles.activeTooltip} ${styles.bounceAnimation}`}>
+                              Começar<div className={styles.tooltipArrow} />
                             </div>
-                            <h4 className={styles.popupLesson}>{item.lesson.tituloLicao}</h4>
+                          )}
 
-                            <button 
-                              className={styles.popupStartBtn} 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (currentLives <= 0) {
-                                  setNoLivesModalOpen(true);
-                                  return;
-                                }
-                                handleLessonClick(item.modulo, item.localIdx);
-                                setSelectedNode(null);
-                              }}
-                            >
-                              Iniciar Aula
-                            </button>
-                          </div>
-                          <div className={styles.popupArrow} />
+                          <button
+                            type="button"
+                            className={`${styles.trailNode} ${isActive ? styles.trailNodeActive : ""} ${isCompleted ? styles.trailNodeCompleted : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedNode({modulo: item.modulo, index: item.localIdx});
+                            }}
+                          >
+                            {isCompleted ? <Star size={24} fill="currentColor" /> : <PlayIcon />}
+                          </button>
                         </div>
-                      )}
+                        {!isLastLesson && (
+                          <div className={styles.simpleConnector} style={getConnectorStyle(idx)} aria-hidden />
+                        )}
+                      </div>
+                    );
+                  })}
 
-                      <button 
-                        type="button" 
-                        className={`${styles.trailNode} ${isActive ? styles.trailNodeActive : ""} ${isCompleted ? styles.trailNodeCompleted : ""}`} 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedNode({modulo: item.modulo, index: item.localIdx});
-                        }}
-                      >
-                         {isCompleted ? <Star size={24} fill="currentColor" /> : <PlayIcon />}
-                      </button>
+                  {/* Popup renderizado FORA do nodeWrapper para não ser afetado pelo transform */}
+                  {selectedItem && (
+                    <div className={styles.nodePopup} onClick={(e) => e.stopPropagation()}>
+                      <div className={styles.popupContent}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span className={styles.popupModule}>{selectedItem.modulo.titulo}</span>
+                        </div>
+                        <h4 className={styles.popupLesson}>{selectedItem.lesson.tituloLicao}</h4>
+
+                        <button
+                          className={styles.popupStartBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (currentLives <= 0) {
+                              setNoLivesModalOpen(true);
+                              return;
+                            }
+                            handleLessonClick(selectedItem.modulo, selectedItem.localIdx);
+                            setSelectedNode(null);
+                          }}
+                        >
+                          Iniciar Aula
+                        </button>
+                      </div>
+                      <div className={styles.popupArrow} />
                     </div>
-                    {!isLastLesson && (
-                      <div className={styles.simpleConnector} style={getConnectorStyle(idx)} aria-hidden />
-                    )}
-                  </div>
-                );
-              });
+                  )}
+                </>
+              );
             })()}
           </div>
         </section>

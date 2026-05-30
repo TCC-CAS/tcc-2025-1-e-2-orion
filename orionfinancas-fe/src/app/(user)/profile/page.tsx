@@ -79,7 +79,7 @@ export default function ProfilePage() {
                     if (c === '#ef4444') return 'high';
                     return 'medium';
                 };
-                const mapped = data.allGoals.map((g: any) => ({
+                const mapped = (data.data || data.allGoals || []).map((g: any) => ({
                     id: g._id,
                     title: g.goalName,
                     current: g.currentAmount || 0,
@@ -292,9 +292,9 @@ export default function ProfilePage() {
                             height: '100%',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            background: 'rgba(255,255,255,0.05)',
+                            background: 'var(--surface-subtle)',
                             borderRadius: '50%',
-                            color: 'rgba(255,255,255,0.4)'
+                            color: 'var(--text-muted)'
                         }}
                     >
                         <User size={48} />

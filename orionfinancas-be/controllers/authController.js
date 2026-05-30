@@ -272,7 +272,7 @@ const authController = {
 
             const birthdateDate = new Date(birthdate);
 
-            // RN01 — Validação de faixa etária (público-alvo: 15-25 anos)
+            // RN01 — Validação de faixa etária (público-alvo: 18 anos ou mais)
             const today = new Date();
             let age = today.getFullYear() - birthdateDate.getFullYear();
             const m = today.getMonth() - birthdateDate.getMonth();
@@ -280,22 +280,14 @@ const authController = {
                 age--;
             }
 
-            if (age < 15 || age > 25) {
+            if (isNaN(age) || age < 18) {
                 return res.status(400).json({
-                    message: 'A plataforma é destinada a jovens de 15 a 25 anos.',
+                    message: 'A plataforma é destinada a maiores de 18 anos.',
                     status: 'ERROR'
                 });
             }
 
-            // LGPD Art. 14 — menores de 18 exigem consentimento dos responsáveis
-            const isMinor = age < 18;
-            if (isMinor && parentalConsent !== true) {
-                return res.status(400).json({
-                    message: 'Para usuários menores de 18 anos, é necessário o consentimento dos responsáveis (LGPD art. 14).',
-                    status: 'ERROR',
-                    requiresParentalConsent: true
-                });
-            }
+            const isMinor = false;
 
             const TERMS_VERSION = process.env.TERMS_VERSION || '1.0';
 
@@ -449,9 +441,9 @@ const authController = {
                 }
             );
 
-            const emailSent = await emailService.sendPasswordResetEmail(email, resetToken);
+            const emailResult = await emailService.sendPasswordResetEmail(email, resetToken);
 
-            if (!emailSent) {
+            if (!emailResult.success) {
                 await usersCollection.updateOne(
                     { _id: user._id },
                     { $unset: { resetToken: "", resetTokenExpires: "" } }

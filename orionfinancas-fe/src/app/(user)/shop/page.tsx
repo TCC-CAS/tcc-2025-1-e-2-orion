@@ -119,7 +119,7 @@ export default function ShopPage() {
                             </div>
                         ))
                     ) : shopItems.length === 0 ? (
-                        <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)', width: '100%', gridColumn: '1 / -1' }}>
+                        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', width: '100%', gridColumn: '1 / -1' }}>
                             Nenhum item disponível na loja no momento.
                         </div>
                     ) : (

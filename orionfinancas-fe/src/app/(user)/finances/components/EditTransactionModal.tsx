@@ -9,13 +9,15 @@ interface EditTransactionModalProps {
     onClose: () => void;
     transaction: any;
     onSave: (updatedTx: any) => void;
+    categories?: string[];
 }
 
 const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     isOpen,
     onClose,
     transaction,
-    onSave
+    onSave,
+    categories = [],
 }) => {
     const [editForm, setEditForm] = useState<any>(null);
 
@@ -63,11 +65,17 @@ const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 <div className={styles.formGroup}>
                     <label>Categoria</label>
                     <input
+                        list="edit-categories-list"
                         className={styles.formInput}
                         value={editForm.category}
                         onChange={e => setEditForm({ ...editForm, category: e.target.value })}
                         required
                     />
+                    <datalist id="edit-categories-list">
+                        {categories.map(cat => (
+                            <option key={cat} value={cat} />
+                        ))}
+                    </datalist>
                 </div>
                 <div className={styles.formGroup} style={{ marginTop: '0.5rem' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'normal' }}>
