@@ -183,4 +183,20 @@ select option {
   background: var(--dark-surface);
   color: var(--text-primary);
 }
-
+
+/* Custom scrollbar (movido de Learning.module.css) */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) var(--dark-bg);
+}
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-track {
+  background: var(--dark-bg);
+}
+body::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 20px;
+  border: 2px solid var(--dark-bg);
+}

@@ -52,7 +52,7 @@ export default function GoalsPage() {
         try {
             const data = await api.get('/goals/get-goals');
             if (data.status === 'OK') {
-                const mapped = data.allGoals.map((g: any) => ({
+                const mapped = (data.data || []).map((g: any) => ({
                     id: g._id,
                     title: g.goalName,
                     current: g.currentAmount || 0,

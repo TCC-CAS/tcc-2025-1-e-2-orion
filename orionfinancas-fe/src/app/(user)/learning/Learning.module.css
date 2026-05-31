@@ -7,25 +7,7 @@
   margin: 0 auto;
 }
 
-/* Custom scrollbar para manter o visual premium */
-:global(body) {
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary-color) var(--dark-bg);
-}
-
-:global(body::-webkit-scrollbar) {
-  width: 8px;
-}
-
-:global(body::-webkit-scrollbar-track) {
-  background: var(--dark-bg);
-}
-
-:global(body::-webkit-scrollbar-thumb) {
-  background-color: var(--primary-color);
-  border-radius: 20px;
-  border: 2px solid var(--dark-bg);
-}
+/* Custom scrollbar movido para globals.css (selector global não permitido em CSS Module) */
 
 .learningHeader {
   margin-bottom: 2.5rem;

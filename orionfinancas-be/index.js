@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { default: rateLimit } = require('express-rate-limit');
 const { connectDB, getDB } = require('./config/database.js');
 const goalsRoutes = require('./routes/goals.js');
