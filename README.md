@@ -90,6 +90,7 @@ tcc-2025-1-e-2-orion/
 
 > Ajuste os nomes das pastas (`orionfinancas-fe` / `orionfinancas-be`) caso no repositório final eles tenham outros nomes (ex.: `frontend` / `backend`).
 
+
 ---
 
 ## Pré-requisitos
