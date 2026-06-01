@@ -1,0 +1,58 @@
+.termsContainer {
+  max-width: 800px; /* Largura otimizada para leitura de textos longos */
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.termsHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.lastUpdated {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.legalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.section h2 {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.section p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.section ul {
+  margin-top: 1rem;
+  padding-left: 1.5rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.section ul li::marker {
+  color: var(--primary-color);
+}
+
+@media (max-width: 600px) {
+  .termsContainer {
+    padding: 2rem 1rem;
+  }
+}

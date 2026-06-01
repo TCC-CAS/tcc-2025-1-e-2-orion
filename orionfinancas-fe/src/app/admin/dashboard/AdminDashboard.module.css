@@ -1,0 +1,503 @@
+.adminContainer {
+  padding: 0;
+  color: var(--text-primary);
+}
+
+.pageHeader {
+  margin-bottom: 2.5rem;
+}
+
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.pageSubtitle {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.mainDashboard {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  margin-bottom: 3rem;
+  align-items: stretch;
+}
+
+.chartSection {
+  background: var(--dark-surface);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.chartDisplay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.chartTabs {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
+}
+
+.tabBtn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 8px;
+}
+
+.tabBtn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabBtn.activeTab {
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.1);
+}
+
+.historyWrapper {
+  width: 100%;
+}
+
+.resumoView {
+  display: flex;
+  gap: 3rem;
+  align-items: center;
+  width: 100%;
+}
+
+.chartContainer {
+  flex: 0 0 320px;
+  position: relative;
+}
+
+.pieWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.chartCenterInfo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.centerLabel {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 0.2rem;
+}
+
+.centerValue {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.resumoContext {
+  flex: 1;
+}
+
+.resumoContext h4 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.resumoContext p {
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.healthStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  background: #2dd4bf;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #2dd4bf;
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.balanceCard {
+  background: var(--dark-surface);
+  padding: 2rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.balanceLabel {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.balanceValue {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.balanceHint {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.miniMetric {
+  background: var(--dark-surface);
+  padding: 1.5rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.miniLabel {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.miniValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.primeCard {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  padding: 1.5rem;
+  border-radius: 24px;
+  border: 1px solid #333954;
+}
+
+.primeHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.primeTag {
+  background: #f59e0b;
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.primeValue {
+  font-size: 2rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.primeProgress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: #2dd4bf;
+  border-radius: 4px;
+}
+
+/* Recent Activity */
+.recentSection {
+  background: var(--dark-surface);
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.detailsBtn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--surface-subtle);
+  border-radius: 16px;
+}
+
+.activityIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.activityMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.activityTitle {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.activityCategory {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.activityAmount {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Config View */
+.configView {
+  padding: 1rem;
+  width: 100%;
+  max-width: 600px;
+}
+
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.field label {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.field input {
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-color);
+  padding: 0.8rem;
+  border-radius: 12px;
+  color: var(--text-primary);
+}
+
+.saveBtn {
+  background: #2dd4bf;
+  color: #000;
+  font-weight: 700;
+  padding: 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.saveBtn:hover {
+  background: #14b8a6;
+}
+
+/* ===== Modal de Histórico Administrativo ===== */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+}
+
+.modalContent {
+  width: 100%;
+  max-width: 820px;
+  max-height: 88vh;
+  background: var(--dark-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modalHeader h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.closeButton:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.modalBody {
+  padding: 1rem 1.5rem;
+  overflow: auto;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.historyTable th,
+.historyTable td {
+  text-align: left;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.historyTable th {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.historyTable td {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.historyTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.typeIndicator {
+  display: inline-flex;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.typeSuccess {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+
+.typeInfo {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.typeWarning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.modalFooter {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.footerNote {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ===== Overrides de tema claro ===== */
+:global([data-theme="light"]) .primeCard {
+  background: var(--card-gradient);
+  border-color: var(--card-border);
+}
+
+:global([data-theme="light"]) .primeProgress {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+:global([data-theme="light"]) .tabBtn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+:global([data-theme="light"]) .chartTabs {
+  border-bottom-color: var(--border-color);
+}

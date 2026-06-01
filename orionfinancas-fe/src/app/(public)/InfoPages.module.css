@@ -1,0 +1,24 @@
+.infoContainer {
+    max-width: 800px;
+    margin: 4rem auto;
+    padding: 0 1.5rem;
+    color: var(--text-primary);
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    text-align: center;
+    color: var(--primary-color);
+    text-transform: uppercase;
+}
+
+.content {
+    background: var(--dark-surface);
+    padding: 2.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    line-height: 1.6;
+    text-align: justify;
+}
