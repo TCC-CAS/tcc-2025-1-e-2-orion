@@ -85,7 +85,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.8rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .infoItem:last-child {
@@ -147,7 +147,7 @@
   padding: 0.8rem 1rem;
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--surface-subtle);
   color: var(--text-primary);
   font-size: 0.95rem;
   transition: border-color 0.2s;

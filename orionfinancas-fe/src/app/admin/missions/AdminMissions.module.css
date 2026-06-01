@@ -57,7 +57,7 @@
 }
 
 .missionCard:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--surface-hover);
   transform: translateY(-4px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
@@ -85,7 +85,7 @@
 }
 
 .actionBtn {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-subtle);
   border: none;
   color: var(--text-secondary);
   width: 32px;
@@ -99,7 +99,7 @@
 }
 
 .actionBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-hover);
   color: var(--text-primary);
 }
 
@@ -123,7 +123,7 @@
 }
 
 .missionStats {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-subtle);
   padding: 1rem;
   border-radius: 12px;
   display: flex;
@@ -165,10 +165,10 @@
   color: var(--text-secondary);
 }
 
-.formGroup input, 
-.formGroup textarea, 
+.formGroup input,
+.formGroup textarea,
 .formGroup select {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-subtle);
   border: 1px solid var(--border-color);
   padding: 0.8rem 1rem;
   border-radius: 10px;
@@ -203,7 +203,7 @@
 
 .cancelBtn {
   flex: 1;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-subtle);
   border: none;
   color: var(--text-primary);
   padding: 0.8rem;
@@ -214,7 +214,7 @@
 }
 
 .cancelBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-hover);
 }
 
 .submitBtn {

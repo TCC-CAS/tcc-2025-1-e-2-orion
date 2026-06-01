@@ -75,8 +75,8 @@ export default function AdminLayout({
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center',
-        background: '#0f172a',
-        color: 'white',
+        background: 'var(--dark-bg)',
+        color: 'var(--text-primary)',
         fontFamily: 'Inter, sans-serif'
       }}>
         Carregando...

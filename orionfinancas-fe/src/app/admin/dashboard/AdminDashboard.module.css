@@ -1,6 +1,6 @@
 .adminContainer {
   padding: 0;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .pageHeader {
@@ -113,7 +113,7 @@
 .centerValue {
   font-size: 2rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .resumoContext {
@@ -258,8 +258,8 @@
 
 .detailsBtn {
   background: transparent;
-  border: 1px solid #333954;
-  color: #fff;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   padding: 0.5rem 1rem;
   border-radius: 10px;
   cursor: pointer;
@@ -276,7 +276,7 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-subtle);
   border-radius: 16px;
 }
 
@@ -337,11 +337,11 @@
 }
 
 .field input {
-  background: #0b0f1a;
-  border: 1px solid #333954;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-color);
   padding: 0.8rem;
   border-radius: 12px;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .saveBtn {
@@ -357,4 +357,23 @@
 
 .saveBtn:hover {
   background: #14b8a6;
+}
+
+/* ===== Overrides de tema claro ===== */
+:global([data-theme="light"]) .primeCard {
+  background: var(--card-gradient);
+  border-color: var(--card-border);
+}
+
+:global([data-theme="light"]) .primeProgress {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+:global([data-theme="light"]) .tabBtn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+:global([data-theme="light"]) .chartTabs {
+  border-bottom-color: var(--border-color);
 }
